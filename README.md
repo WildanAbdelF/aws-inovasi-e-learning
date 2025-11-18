@@ -4,15 +4,15 @@ Platform e-learning modern yang dibangun menggunakan Next.js (App Router), TypeS
 Aplikasi ini memiliki fitur login, register, dashboard, serta komponen UI yang reusable.
 
 Fitur Utama
-> Autentikasi (LocalStorage)
-> Register user baru
-> Login dengan email & password
-> Logout
+> Autentikasi (LocalStorage),
+> Register user baru,
+> Login dengan email & password,
+> Logout.
 
 Redirect otomatis:
-> Setelah register → login
-> Setelah login → homepage/dashboard
-> Auth state global menggunakan AuthProvider + useAuth() hook
+> Setelah register → login,
+> Setelah login → homepage/dashboard,
+> Auth state global menggunakan AuthProvider + useAuth() hook.
 
 🎨 UI Modern dengan shadcn/ui
 Komponen UI reusable: Button, Input, Card, dll.
