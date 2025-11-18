@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "./ui/button";
 
 export default function Navbar() {
@@ -11,7 +12,7 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center space-x-6">
-          <a href="#" className="text-sm">Katalog Kursus</a>
+          <Link href="/katalog" className="text-sm">Katalog Kursus</Link>
           <Button variant="outline">Login</Button>
           <Button className="bg-red-600 hover:bg-red-700">Daftar</Button>
         </div>
