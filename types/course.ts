@@ -4,4 +4,6 @@ export interface Course {
   author: string;
   price: number;
   image: string;
+  description?: string;
+  curriculum?: string[];
 }
