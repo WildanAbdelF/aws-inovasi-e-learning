@@ -13,8 +13,12 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center space-x-6">
           <Link href="/katalog" className="text-sm">Katalog Kursus</Link>
-          <Button variant="outline">Login</Button>
-          <Button className="bg-red-600 hover:bg-red-700">Daftar</Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/login">Login</Link>
+          </Button>
+          <Button asChild size="sm" className="bg-red-600 hover:bg-red-700">
+            <Link href="/register">Daftar</Link>
+          </Button>
         </div>
       </div>
     </nav>
