@@ -13,9 +13,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getUser } from "@/lib/localStorageHelper";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
 
   const form = useForm({
     defaultValues: {
@@ -38,6 +40,9 @@ export default function LoginPage() {
     }
 
     window.alert("Login sukses");
+
+    // update context agar Navbar langsung ter-refresh tanpa reload
+    login(stored);
     router.push("/dashboard");
   }
 
