@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { saveUser } from "@/lib/localStorageHelper";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -26,7 +27,12 @@ export default function RegisterPage() {
   });
 
   function onSubmit(values: any) {
-    // Simulasi signup sukses
+    saveUser({
+      name: values.name,
+      email: values.email,
+      password: values.password,
+    });
+
     window.alert("Pendaftaran berhasil. Silakan login.");
     router.push("/login");
   }

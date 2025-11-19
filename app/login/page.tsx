@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { getUser } from "@/lib/localStorageHelper";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,7 +25,18 @@ export default function LoginPage() {
   });
 
   function onSubmit(values: any) {
-    // Simulasi login sukses (gantikan dengan panggilan API nyata)
+    const stored = getUser();
+
+    if (!stored) {
+      window.alert("Akun belum terdaftar. Silakan daftar terlebih dahulu.");
+      return;
+    }
+
+    if (stored.email !== values.email || stored.password !== values.password) {
+      window.alert("Email atau password salah.");
+      return;
+    }
+
     window.alert("Login sukses");
     router.push("/");
   }
