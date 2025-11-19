@@ -33,3 +33,7 @@ export function clearUser() {
 	window.localStorage.removeItem(LS_KEYS.USER);
 }
 
+export function isLoggedIn() {
+	return !!getUser();
+}
+

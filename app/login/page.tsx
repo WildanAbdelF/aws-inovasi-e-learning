@@ -38,7 +38,7 @@ export default function LoginPage() {
     }
 
     window.alert("Login sukses");
-    router.push("/");
+    router.push("/dashboard");
   }
 
   return (

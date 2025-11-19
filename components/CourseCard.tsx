@@ -5,7 +5,7 @@ import { Course } from "@/types/course";
 export default function CourseCard({ course }: { course: Course }) {
   return (
     <Link href={`/courses/${course.id}`} className="block">
-      <Card className="overflow-hidden shadow-sm hover:shadow-md transition">
+      <Card className="overflow-hidden shadow-sm hover:scale-105 transition">
         <img src={course.image} className="w-full h-40 object-cover" />
 
         <CardContent className="p-4 space-y-1">
