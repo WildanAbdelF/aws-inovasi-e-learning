@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getUser } from "@/lib/localStorageHelper";
+import { getUser, saveUser, StoredUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/AuthProvider";
 
 export default function LoginPage() {
@@ -39,10 +39,16 @@ export default function LoginPage() {
       return;
     }
 
-    window.alert("Login sukses");
+    // Set sesi di context + pastikan data user tersimpan
+    const user: StoredUser = {
+      name: stored.name,
+      email: stored.email,
+      password: stored.password,
+    };
+    saveUser(user);
+    login(user);
 
-    // update context agar Navbar langsung ter-refresh tanpa reload
-    login(stored);
+    window.alert("Login sukses");
     router.push("/dashboard");
   }
 

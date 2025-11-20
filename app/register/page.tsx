@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { saveUser } from "@/lib/localStorageHelper";
+import { saveUser, StoredUser } from "@/lib/localStorageHelper";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { login } = useAuth();
 
   const form = useForm({
     defaultValues: {
@@ -27,14 +29,20 @@ export default function RegisterPage() {
   });
 
   function onSubmit(values: any) {
-    saveUser({
+    const user: StoredUser = {
       name: values.name,
       email: values.email,
       password: values.password,
-    });
+    };
 
-    window.alert("Pendaftaran berhasil. Silakan login.");
-    router.push("/login");
+    // Simpan user ke localStorage
+    saveUser(user);
+
+    // Set sesi di context supaya navbar langsung berubah jika diperlukan
+    login(user);
+
+    window.alert("Pendaftaran berhasil. Anda sudah otomatis login.");
+    router.push("/dashboard");
   }
 
   return (

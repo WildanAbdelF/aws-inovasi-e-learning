@@ -1,3 +1,4 @@
+
 export const LS_KEYS = {
 	USER: "lms_user",
 };
@@ -36,4 +37,5 @@ export function clearUser() {
 export function isLoggedIn() {
 	return !!getUser();
 }
+
 
