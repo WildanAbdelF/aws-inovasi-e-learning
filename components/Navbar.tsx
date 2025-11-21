@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { useAuth } from "./AuthProvider";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Navbar() {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const userName = user?.name || user?.email || null;
   const isLoggedIn = !!userName;
+  const [open, setOpen] = useState(false);
 
   return (
     <nav className="w-full border-b bg-white sticky top-0 z-50">
@@ -30,7 +34,38 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Menu + area user kanan */}
+        {/* Tombol hamburger (mobile) */}
+        <button
+          className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-neutral-700 hover:bg-neutral-100"
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Toggle navigation"
+        >
+          <svg
+            className="h-6 w-6"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            {open ? (
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            ) : (
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 8h16M4 16h16"
+              />
+            )}
+          </svg>
+        </button>
+
+        {/* Menu + area user kanan (desktop) */}
         <div className="hidden md:flex items-center gap-8">
           <div className="flex items-center gap-6 text-sm">
             <Link
@@ -85,7 +120,10 @@ export default function Navbar() {
                   {userName}
                 </span>
                 <button
-                  onClick={logout}
+                  onClick={() => {
+                    logout();
+                    router.push("/");
+                  }}
                   className="text-xs text-neutral-500 hover:text-neutral-800 ml-1"
                 >
                   Logout
@@ -104,6 +142,62 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Menu mobile dropdown */}
+      {open && (
+        <div className="md:hidden border-t bg-white">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex flex-col gap-3 text-sm">
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className={
+                isLoggedIn
+                  ? "text-blue-600 font-medium"
+                  : "text-neutral-700 hover:text-neutral-900"
+              }
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/katalog"
+              onClick={() => setOpen(false)}
+              className="text-neutral-700 hover:text-neutral-900"
+            >
+              Katalog Kursus
+            </Link>
+
+            {isLoggedIn ? (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  logout();
+                  router.push("/");
+                }}
+                className="text-left text-neutral-500 hover:text-neutral-800"
+              >
+                Logout
+              </button>
+            ) : (
+              <div className="flex gap-3 pt-2">
+                <Button asChild variant="outline" size="sm" className="flex-1">
+                  <Link href="/login" onClick={() => setOpen(false)}>
+                    Login
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="sm"
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                >
+                  <Link href="/register" onClick={() => setOpen(false)}>
+                    Daftar
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

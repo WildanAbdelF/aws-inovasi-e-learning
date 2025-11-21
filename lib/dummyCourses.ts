@@ -34,4 +34,49 @@ export const dummyCourses = [
       "Kuasai front-end dan back-end development: HTML/CSS, React, Node.js, dan deployment modern untuk membangun aplikasi web full-stack.",
     curriculum: ["HTML & CSS", "JavaScript & React", "Node.js & Databases", "Deployment"],
   },
+  {
+    id: "4",
+    title: "Data Analysis dengan Python",
+    author: "Siti Rahma",
+    price: 399000,
+    image: "/images/course4.jpg",
+    description:
+      "Pelajari cara menganalisis data menggunakan Python, Pandas, dan visualisasi untuk mengambil keputusan berbasis data.",
+    curriculum: [
+      "Dasar-dasar Python untuk analisis data",
+      "Pengenalan Pandas & NumPy",
+      "Data cleaning & transformation",
+      "Visualisasi data dengan Matplotlib/Seaborn",
+    ],
+  },
+  {
+    id: "5",
+    title: "Belajar Cloud Computing Dasar",
+    author: "Budi Santoso",
+    price: 450000,
+    image: "/images/course5.jpg",
+    description:
+      "Kenali konsep dasar cloud computing, layanan populer, dan cara memanfaatkan cloud untuk aplikasi modern.",
+    curriculum: [
+      "Konsep dasar cloud computing",
+      "Model layanan IaaS, PaaS, SaaS",
+      "Pengenalan layanan cloud populer",
+      "Keamanan & best practice di cloud",
+    ],
+  },
+  {
+    id: "6",
+    title: "Product Management untuk Pemula",
+    author: "Dina Pratama",
+    price: 425000,
+    image: "/images/course6.jpg",
+    description:
+      "Pelajari peran product manager, lifecycle produk, dan cara berkolaborasi dengan tim tech & bisnis.",
+    curriculum: [
+      "Peran & tanggung jawab product manager",
+      "Discovery & riset kebutuhan pengguna",
+      "Prioritas fitur & roadmap",
+      "Kolaborasi dengan tim design & engineering",
+    ],
+  },
 ];

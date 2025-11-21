@@ -1,4 +1,5 @@
 import { Button } from "./ui/button";
+import Link from "next/link";
 
 export default function HeroSection() {
   return (
@@ -13,8 +14,8 @@ export default function HeroSection() {
           keahlian Anda ke level berikutnya.
         </p>
 
-        <Button className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-6 text-lg">
-          Mulai Belajar Sekarang
+        <Button asChild className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-6 text-lg">
+          <Link href="/katalog">Mulai Belajar Sekarang</Link>
         </Button>
       </div>
 
