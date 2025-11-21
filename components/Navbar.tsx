@@ -143,61 +143,63 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Menu mobile dropdown */}
-      {open && (
-        <div className="md:hidden border-t bg-white">
-          <div className="max-w-7xl mx-auto px-6 py-3 flex flex-col gap-3 text-sm">
-            <Link
-              href="/dashboard"
-              onClick={() => setOpen(false)}
-              className={
-                isLoggedIn
-                  ? "text-blue-600 font-medium"
-                  : "text-neutral-700 hover:text-neutral-900"
-              }
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/katalog"
-              onClick={() => setOpen(false)}
-              className="text-neutral-700 hover:text-neutral-900"
-            >
-              Katalog Kursus
-            </Link>
+      {/* Menu mobile dropdown dengan animasi smooth */}
+      <div
+        className={`md:hidden border-t bg-white overflow-hidden transition-all duration-300 ease-out ${
+          open ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-6 py-3 flex flex-col gap-3 text-sm">
+          <Link
+            href="/dashboard"
+            onClick={() => setOpen(false)}
+            className={
+              isLoggedIn
+                ? "text-blue-600 font-medium"
+                : "text-neutral-700 hover:text-neutral-900"
+            }
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/katalog"
+            onClick={() => setOpen(false)}
+            className="text-neutral-700 hover:text-neutral-900"
+          >
+            Katalog Kursus
+          </Link>
 
-            {isLoggedIn ? (
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  logout();
-                  router.push("/");
-                }}
-                className="text-left text-neutral-500 hover:text-neutral-800"
+          {isLoggedIn ? (
+            <button
+              onClick={() => {
+                setOpen(false);
+                logout();
+                router.push("/");
+              }}
+              className="text-left text-neutral-500 hover:text-neutral-800"
+            >
+              Logout
+            </button>
+          ) : (
+            <div className="flex gap-3 pt-2">
+              <Button asChild variant="outline" size="sm" className="flex-1">
+                <Link href="/login" onClick={() => setOpen(false)}>
+                  Login
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                className="flex-1 bg-red-600 hover:bg-red-700"
               >
-                Logout
-              </button>
-            ) : (
-              <div className="flex gap-3 pt-2">
-                <Button asChild variant="outline" size="sm" className="flex-1">
-                  <Link href="/login" onClick={() => setOpen(false)}>
-                    Login
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  className="flex-1 bg-red-600 hover:bg-red-700"
-                >
-                  <Link href="/register" onClick={() => setOpen(false)}>
-                    Daftar
-                  </Link>
-                </Button>
-              </div>
-            )}
-          </div>
+                <Link href="/register" onClick={() => setOpen(false)}>
+                  Daftar
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </nav>
   );
 }

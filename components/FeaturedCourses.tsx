@@ -11,7 +11,10 @@ export default function FeaturedCourses() {
 
         <div className="grid md:grid-cols-3 gap-6 mt-10">
           {dummyCourses.slice(0, 3).map((course) => (
-            <CourseCard key={course.id.toString()} course={{ ...course, id: course.id.toString() }} />
+            <CourseCard
+              key={course.id.toString()}
+              course={{ ...course, id: course.id.toString() }}
+            />
           ))}
         </div>
 
