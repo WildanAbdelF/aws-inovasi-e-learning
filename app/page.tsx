@@ -29,10 +29,27 @@ function AnimatedSection({
   );
 }
 
+function HeroAnimatedOnce({ children }: { children: React.ReactNode }) {
+  const { ref, inView } = useInView({ threshold: 0.1 });
+
+  return (
+    <div
+      ref={ref}
+      className={`transition-opacity transition-transform duration-500 ease-out ${
+        inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function HomePage() {
   return (
     <>
-      <HeroSection />
+      <HeroAnimatedOnce>
+        <HeroSection />
+      </HeroAnimatedOnce>
       <AnimatedSection delay={100}>
         <FeaturedCourses />
       </AnimatedSection>

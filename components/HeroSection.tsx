@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function HeroSection() {
   return (
-    <section className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-10">
+    <section className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-10 flex items-center">
       <div>
         <h1 className="text-4xl md:text-5xl font-bold leading-tight">
           Wujudkan Potensi Anda Melalui Pembelajaran
@@ -23,7 +23,7 @@ export default function HeroSection() {
         <img
           src="/images/hero.png"
           alt="Hero"
-          className="rounded-xl shadow-md w-full"
+          className="rounded-xl w-full"
         />
       </div>
     </section>
