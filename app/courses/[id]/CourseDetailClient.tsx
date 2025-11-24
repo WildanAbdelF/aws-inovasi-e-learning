@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { dummyCourses } from "@/lib/dummyCourses";
 import { addPurchase } from "@/lib/localStorageHelper";
@@ -12,10 +13,18 @@ export type CourseDetailClientProps = {
 
 export default function CourseDetailClient({ course }: CourseDetailClientProps) {
   const [open, setOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const router = useRouter();
 
   const handleConfirmPurchase = () => {
     addPurchase({ id: String(course.id), title: course.title, price: course.price });
     setOpen(false);
+    setShowSuccess(true);
+
+    setTimeout(() => {
+      setShowSuccess(false);
+      router.push("/dashboard");
+    }, 1500);
   };
 
   return (
@@ -126,6 +135,20 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
           </button>
         </DialogContent>
       </Dialog>
+
+      {showSuccess && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-lg px-8 py-6 text-center max-w-sm mx-auto">
+            <h3 className="text-lg font-semibold mb-2">Pembayaran Berhasil</h3>
+            <p className="text-sm text-neutral-600 mb-4">
+              Kursus <span className="font-medium">{course.title}</span> berhasil ditambahkan ke akun Anda.
+            </p>
+            <p className="text-xs text-neutral-500">
+              Mengarahkan ke dashboard Anda...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

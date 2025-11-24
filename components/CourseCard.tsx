@@ -1,11 +1,30 @@
 import Link from "next/link";
 import { Card, CardContent } from "./ui/card";
 import { Course } from "@/types/course";
+import { getPurchases } from "@/lib/localStorageHelper";
+import { useEffect, useState } from "react";
 
 export default function CourseCard({ course }: { course: Course }) {
+  const [purchased, setPurchased] = useState(false);
+
+  useEffect(() => {
+    try {
+      const list = getPurchases();
+      setPurchased(list.some((c) => c.id === String(course.id)));
+    } catch {
+      setPurchased(false);
+    }
+  }, [course.id]);
+
   return (
     <Link href={`/courses/${course.id}`} className="block h-full">
-      <Card className="overflow-hidden shadow-sm hover:scale-105 transition h-full flex flex-col">
+      <Card className="overflow-hidden shadow-sm hover:scale-105 transition h-full flex flex-col relative">
+        {purchased && (
+          <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white text-[10px] font-semibold px-2 py-1 shadow-sm">
+            Sudah dibeli
+          </span>
+        )}
+
         <img src={course.image} className="w-full h-40 object-cover" />
 
         <CardContent className="p-4 flex flex-col flex-1">
