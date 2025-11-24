@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { dummyCourses } from "@/lib/dummyCourses";
-import { addPurchase } from "@/lib/localStorageHelper";
+import { addPurchase, getPurchases } from "@/lib/localStorageHelper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export type CourseDetailClientProps = {
@@ -14,12 +14,20 @@ export type CourseDetailClientProps = {
 export default function CourseDetailClient({ course }: CourseDetailClientProps) {
   const [open, setOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [alreadyPurchased, setAlreadyPurchased] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const list = getPurchases();
+    setAlreadyPurchased(list.some((c) => c.id === String(course.id)));
+  }, [course.id]);
 
   const handleConfirmPurchase = () => {
     addPurchase({ id: String(course.id), title: course.title, price: course.price });
     setOpen(false);
     setShowSuccess(true);
+
+    setAlreadyPurchased(true);
 
     setTimeout(() => {
       setShowSuccess(false);
@@ -70,15 +78,23 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
           <div className="border rounded-lg p-6 shadow-sm bg-white">
             <div className="mb-4">
               <div className="text-2xl font-bold">Rp {course.price.toLocaleString("id-ID")}</div>
-              <div className="text-xs text-neutral-500">Akses Lifetime</div>
+              <div className="text-xs text-neutral-500 flex items-center gap-2">
+                <span>Akses Lifetime</span>
+                {alreadyPurchased && (
+                  <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold px-2 py-0.5">
+                    Sudah dibeli
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-col gap-3">
               <button
-                className="w-full bg-red-600 text-white py-3 rounded-lg"
-                onClick={() => setOpen(true)}
+                className="w-full bg-red-600 text-white py-3 rounded-lg disabled:opacity-70 disabled:cursor-default"
+                onClick={() => !alreadyPurchased && setOpen(true)}
+                disabled={alreadyPurchased}
               >
-                Beli Lifetime
+                {alreadyPurchased ? "Lanjutkan Pembelajaran" : "Beli Lifetime"}
               </button>
               <button className="w-full border border-blue-600 text-blue-600 py-3 rounded-lg">
                 Gabung Langganan
