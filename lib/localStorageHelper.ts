@@ -1,6 +1,7 @@
 
 export const LS_KEYS = {
 	USER: "lms_user",
+  PURCHASES: "lms_purchases",
 };
 
 export type StoredUser = {
@@ -37,5 +38,32 @@ export function clearUser() {
 export function isLoggedIn() {
 	return !!getUser();
 }
+
+export type PurchasedCourse = {
+	id: string;
+	title: string;
+	price: number;
+};
+
+export function getPurchases(): PurchasedCourse[] {
+	if (!isBrowser()) return [];
+	const raw = window.localStorage.getItem(LS_KEYS.PURCHASES);
+	if (!raw) return [];
+	try {
+		return JSON.parse(raw) as PurchasedCourse[];
+	} catch {
+		return [];
+	}
+}
+
+export function addPurchase(course: PurchasedCourse) {
+	if (!isBrowser()) return;
+	const current = getPurchases();
+	const exists = current.some((c) => c.id === course.id);
+	if (exists) return;
+	const updated = [...current, course];
+	window.localStorage.setItem(LS_KEYS.PURCHASES, JSON.stringify(updated));
+}
+
 
 
