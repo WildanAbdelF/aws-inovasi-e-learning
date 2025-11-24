@@ -6,6 +6,7 @@ import Link from "next/link";
 import { dummyCourses } from "@/lib/dummyCourses";
 import { addPurchase, getPurchases } from "@/lib/localStorageHelper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useInView } from "@/lib/useInView";
 
 export type CourseDetailClientProps = {
   course: (typeof dummyCourses)[number];
@@ -16,6 +17,9 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
   const [showSuccess, setShowSuccess] = useState(false);
   const [alreadyPurchased, setAlreadyPurchased] = useState(false);
   const router = useRouter();
+
+  const { ref: mainRef, inView: mainInView } = useInView({ threshold: 0.15 });
+  const { ref: asideRef, inView: asideInView } = useInView({ threshold: 0.2 });
 
   useEffect(() => {
     const list = getPurchases();
@@ -46,7 +50,12 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <main className="lg:col-span-2">
+        <main
+          ref={mainRef}
+          className={`lg:col-span-2 transition-all duration-500 ease-out transform ${
+            mainInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          }`}
+        >
           <h1 className="text-3xl font-extrabold mb-2">{course.title}</h1>
           <p className="text-sm text-neutral-600 mb-6">Oleh {course.author}</p>
 
@@ -74,7 +83,12 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
           </section>
         </main>
 
-        <aside>
+        <aside
+          ref={asideRef}
+          className={`transition-all duration-500 ease-out transform delay-100 ${
+            asideInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          }`}
+        >
           <div className="border rounded-lg p-6 shadow-sm bg-white">
             <div className="mb-4">
               <div className="text-2xl font-bold">Rp {course.price.toLocaleString("id-ID")}</div>
