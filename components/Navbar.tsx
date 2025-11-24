@@ -14,7 +14,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="w-full border-b bg-white sticky top-0 z-50">
+    <nav className="w-full border-b bg-white sticky top-0 z-50 font-sans">
       <div className="max-w-7xl mx-auto flex items-center justify-between py-3 px-6">
         {/* Brand kiri */}
         <div className="flex items-center gap-2">
@@ -132,7 +132,7 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="border-red-400">
                 <Link href="/login">Login</Link>
               </Button>
               <Button asChild size="sm" className="bg-red-600 hover:bg-red-700">
@@ -181,8 +181,8 @@ export default function Navbar() {
               Logout
             </button>
           ) : (
-            <div className="flex gap-3 pt-2">
-              <Button asChild variant="outline" size="sm" className="flex-1">
+            <div className="flex flex-col gap-2 pt-2">
+              <Button asChild variant="outline" size="sm" className="w-full border-red-400">
                 <Link href="/login" onClick={() => setOpen(false)}>
                   Login
                 </Link>
@@ -190,7 +190,7 @@ export default function Navbar() {
               <Button
                 asChild
                 size="sm"
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="w-full bg-red-600 hover:bg-red-700"
               >
                 <Link href="/register" onClick={() => setOpen(false)}>
                   Daftar
