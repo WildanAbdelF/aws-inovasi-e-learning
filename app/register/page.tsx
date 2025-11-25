@@ -46,13 +46,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <div
-      className="min-h-[80vh] flex items-center justify-center"
-      data-aos="fade-up"
-      data-aos-duration="600"
-    >
+    <div className="min-h-[80vh] flex items-center justify-center">
       <div className="w-full max-w-md p-8">
-        <div className="flex flex-col items-center mb-6">
+        <div
+          className="flex flex-col items-center mb-6"
+          data-aos="fade-up"
+          data-aos-duration="500"
+        >
           <div className="w-12 h-12 rounded-lg bg-red-600 flex items-center justify-center mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 7v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5z"/></svg>
           </div>
@@ -61,7 +61,13 @@ export default function RegisterPage() {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
+            data-aos="fade-up"
+            data-aos-duration="500"
+            data-aos-delay="120"
+          >
             <FormField
               control={form.control}
               name="name"

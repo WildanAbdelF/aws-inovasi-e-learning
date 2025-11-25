@@ -91,7 +91,7 @@ export default function Navbar() {
           </div>
 
           {isLoggedIn ? (
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
               {/* Icon notifikasi */}
               <button className="relative text-neutral-500 hover:text-neutral-800">
                 <span className="sr-only">Notifikasi</span>
@@ -112,7 +112,7 @@ export default function Navbar() {
               </button>
 
               {/* Avatar + nama user */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center text-sm font-semibold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </div>
@@ -124,7 +124,7 @@ export default function Navbar() {
                     logout();
                     router.push("/");
                   }}
-                  className="ml-4 inline-flex items-center rounded border border-red-500 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-500 hover:text-white transition-colors"
+                  className="text-xs text-neutral-500 hover:text-neutral-800 ml-1"
                 >
                   Logout
                 </button>
