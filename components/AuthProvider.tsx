@@ -31,6 +31,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 	const logout = () => {
 		clearUser();
+		// juga hapus semua kursus yang sudah dibeli ketika user logout
+		if (typeof window !== "undefined") {
+			window.localStorage.removeItem("lms_purchases");
+		}
 		setUser(null);
 	};
 
