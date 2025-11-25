@@ -46,7 +46,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
+    <div
+      className="min-h-[80vh] flex items-center justify-center"
+      data-aos="fade-up"
+      data-aos-duration="600"
+    >
       <div className="w-full max-w-md p-8">
         <div className="flex flex-col items-center mb-6">
           <div className="w-12 h-12 rounded-lg bg-red-600 flex items-center justify-center mb-4">

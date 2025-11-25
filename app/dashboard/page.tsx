@@ -24,7 +24,11 @@ export default function DashboardPage() {
 	}
 
 	return (
-		<div className="max-w-7xl mx-auto py-10 px-6">
+		<div
+			className="max-w-7xl mx-auto py-10 px-6"
+			data-aos="fade-up"
+			data-aos-duration="600"
+		>
 			<h1 className="text-3xl font-extrabold mb-6">Selamat Datang, {name}!</h1>
 
 			<div className="flex gap-6 border-b mb-6 text-sm">
