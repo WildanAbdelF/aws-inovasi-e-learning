@@ -7,6 +7,7 @@ import {
 	clearUser,
 	StoredUser,
 } from "@/lib/localStorageHelper";
+import { clearPurchases } from "@/lib/localStorageHelper";
 
 type AuthContextValue = {
 	user: StoredUser | null;
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 	const logout = () => {
 		clearUser();
+		clearPurchases();
 		setUser(null);
 	};
 

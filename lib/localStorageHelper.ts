@@ -65,5 +65,10 @@ export function addPurchase(course: PurchasedCourse) {
 	window.localStorage.setItem(LS_KEYS.PURCHASES, JSON.stringify(updated));
 }
 
+export function clearPurchases() {
+	if (!isBrowser()) return;
+	window.localStorage.removeItem(LS_KEYS.PURCHASES);
+}
+
 
 
