@@ -1,13 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CourseList from "./CourseList";
 import { dummyCourses } from "@/lib/dummyCourses";
+import { getAdminCourses } from "@/lib/adminCoursesStorage";
 
 export default function CourseCatalog() {
   const [query, setQuery] = useState("");
+  const [adminCourses, setAdminCourses] = useState<any[]>([]);
 
-  const filtered = dummyCourses.filter((c) =>
+  useEffect(() => {
+    // Ambil course yang dibuat admin dari localStorage
+    const data = getAdminCourses();
+    setAdminCourses(data);
+  }, []);
+
+  const allCourses = useMemo(
+    () => [...dummyCourses, ...adminCourses],
+    [adminCourses]
+  );
+
+  const filtered = allCourses.filter((c) =>
     c.title.toLowerCase().includes(query.toLowerCase())
   );
 

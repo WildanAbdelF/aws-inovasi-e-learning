@@ -44,12 +44,17 @@ export default function LoginPage() {
       name: stored.name,
       email: stored.email,
       password: stored.password,
+      role: stored.role || (stored.email === "admin@example.com" ? "admin" : "user"),
     };
     saveUser(user);
     login(user);
 
     window.alert("Login sukses");
-    router.push("/dashboard");
+    if (user.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/dashboard");
+    }
   }
 
   return (

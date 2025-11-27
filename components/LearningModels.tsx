@@ -11,14 +11,14 @@ export default function LearningModels() {
         </p>
 
         <div className="grid md:grid-cols-2 gap-6 mt-12">
-          <div className="border rounded-xl p-8 text-center shadow-sm hover:shadow-md transition border-red-200">
+          <div className="border rounded-xl p-8 text-center shadow-sm hover:shadow-md transition border-red-400">
             <h3 className="font-semibold text-lg">Langganan Bulanan</h3>
             <p className="text-neutral-600 mt-2">
               Akses penuh ke semua kursus.
             </p>
           </div>
 
-          <div className="border rounded-xl p-8 text-center shadow-sm hover:shadow-md transition border-blue-200">
+          <div className="border rounded-xl p-8 text-center shadow-sm hover:shadow-md transition border-blue-400">
             <h3 className="font-semibold text-lg">Akses Seumur Hidup</h3>
             <p className="text-neutral-600 mt-2">
               Beli kursus satuan dan akses selamanya.

@@ -33,6 +33,7 @@ export default function RegisterPage() {
       name: values.name,
       email: values.email,
       password: values.password,
+      role: values.email === "admin@example.com" ? "admin" : "user",
     };
 
     // Simpan user ke localStorage
@@ -42,7 +43,11 @@ export default function RegisterPage() {
     login(user);
 
     window.alert("Pendaftaran berhasil. Anda sudah otomatis login.");
-    router.push("/dashboard");
+    if (user.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/dashboard");
+    }
   }
 
   return (

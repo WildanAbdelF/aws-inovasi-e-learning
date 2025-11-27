@@ -8,6 +8,7 @@ export type StoredUser = {
 	name: string;
 	email: string;
 	password: string;
+  role: "admin" | "user";
 };
 
 export function isBrowser() {
