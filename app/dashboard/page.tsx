@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUser, getPurchases, PurchasedCourse } from "@/lib/localStorageHelper";
+import { dummyCourses } from "@/lib/dummyCourses";
 
 export default function DashboardPage() {
 	const router = useRouter();
@@ -22,6 +23,20 @@ export default function DashboardPage() {
 	if (!name) {
 		return null;
 	}
+
+	const getFirstLessonPath = (courseId: string) => {
+		const courseData = dummyCourses.find((course) => course.id === courseId);
+		const firstModule = courseData?.modules?.[0];
+		const firstItem = firstModule?.items[0];
+		if (!firstModule || !firstItem) return null;
+		return `/learn/${courseId}/${firstModule.id}/${firstItem.id}`;
+	};
+
+	const handleContinue = (courseId: string) => {
+		const path = getFirstLessonPath(courseId);
+		if (!path) return;
+		router.push(path);
+	};
 
 	return (
 		<div
@@ -55,7 +70,11 @@ export default function DashboardPage() {
 							<p className="text-xs text-neutral-500 mb-3">
 								Akses Lifetime — Rp {course.price.toLocaleString("id-ID")}
 							</p>
-							<button className="mt-auto bg-blue-700 text-white text-sm py-2 rounded-lg">
+							<button
+								onClick={() => handleContinue(course.id)}
+								className="mt-auto bg-blue-700 text-white text-sm py-2 rounded-lg disabled:bg-neutral-300"
+								disabled={!getFirstLessonPath(course.id)}
+							>
 								Lanjutkan Belajar
 							</button>
 						</div>
