@@ -99,7 +99,7 @@ export default function AdminManagementPage() {
 
 			{/* Konten utama */}
 			<main className="flex-1 p-8">
-				<div className="flex items-center justify-between mb-6">
+				<div className="flex items-center justify-between mb-6" data-aos="fade-down" data-aos-duration="500">
 					<div>
 						<h1 className="text-2xl font-bold">Manajemen Kursus</h1>
 						<p className="text-sm text-neutral-500 mt-1">
@@ -117,7 +117,7 @@ export default function AdminManagementPage() {
 
 				{/* Stats Cards */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-					<div className="bg-white rounded-xl border p-5">
+					<div className="bg-white rounded-xl border p-5" data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
 								📚
@@ -128,7 +128,7 @@ export default function AdminManagementPage() {
 							</div>
 						</div>
 					</div>
-					<div className="bg-white rounded-xl border p-5">
+					<div className="bg-white rounded-xl border p-5" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
 								✅
@@ -141,7 +141,7 @@ export default function AdminManagementPage() {
 							</div>
 						</div>
 					</div>
-					<div className="bg-white rounded-xl border p-5">
+					<div className="bg-white rounded-xl border p-5" data-aos="fade-up" data-aos-duration="500" data-aos-delay="200">
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
 								📖
@@ -157,7 +157,7 @@ export default function AdminManagementPage() {
 				</div>
 
 				{/* Course List */}
-				<section className="bg-white rounded-xl border shadow-sm">
+				<section className="bg-white rounded-xl border shadow-sm" data-aos="fade-up" data-aos-duration="600" data-aos-delay="300">
 					<div className="p-5 border-b">
 						<h2 className="text-sm font-semibold">Daftar Kursus</h2>
 					</div>

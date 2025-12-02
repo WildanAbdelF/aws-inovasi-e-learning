@@ -127,7 +127,7 @@ export default function LearnDetailPage() {
 	return (
 		<div className="min-h-screen bg-neutral-50">
 			<div className="max-w-6xl mx-auto flex flex-col gap-8 py-10 px-4 lg:flex-row lg:gap-10">
-				<aside className="w-full lg:max-w-xs bg-white rounded-2xl border shadow-sm p-6 h-fit">
+				<aside className="w-full lg:max-w-xs bg-white rounded-2xl border shadow-sm p-6 h-fit" data-aos="fade-right" data-aos-duration="600">
 					<p className="text-sm text-neutral-500 mb-2">{course.title}</p>
 					<h2 className="text-lg font-bold mb-4">Progress Keseluruhan</h2>
 					<div className="mb-6">
@@ -179,11 +179,11 @@ export default function LearnDetailPage() {
 						))}
 					</div>
 				</aside>
-				<main className="flex-1">
+				<main className="flex-1" data-aos="fade-left" data-aos-duration="600" data-aos-delay="100">
 					<nav className="text-xs text-neutral-500 mb-4">
 						Katalog Kursus / {course.title} / {currentModule.title}
 					</nav>
-					<h1 className="text-3xl font-extrabold mb-3">{currentItem.title}</h1>
+					<h1 className="text-3xl font-extrabold mb-3" data-aos="fade-up" data-aos-duration="500" data-aos-delay="200">{currentItem.title}</h1>
 					{renderMedia()}
 					<div className="space-y-4 text-neutral-700 leading-relaxed mt-6">
 						{paragraphs.map((paragraph, index) => (

@@ -164,7 +164,7 @@ export default function NewCoursePage() {
 
 			{/* Konten utama */}
 			<main className="flex-1 p-8">
-				<div className="flex items-center justify-between mb-6">
+				<div className="flex items-center justify-between mb-6" data-aos="fade-down" data-aos-duration="500">
 					<div>
 						<h1 className="text-2xl font-bold">Buat Kursus Baru</h1>
 						<p className="text-sm text-neutral-500 mt-1">
@@ -189,7 +189,7 @@ export default function NewCoursePage() {
 
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 					{/* Panel kiri: Course Details + Modules */}
-					<div className="space-y-6">
+					<div className="space-y-6" data-aos="fade-right" data-aos-duration="600">
 						<section className="bg-white rounded-xl border shadow-sm p-5">
 							<h2 className="text-sm font-semibold mb-4">Course Details</h2>
 
@@ -420,7 +420,7 @@ export default function NewCoursePage() {
 					</div>
 
 					{/* Panel kanan: Edit Halaman Materi */}
-					<section className="lg:col-span-2 bg-white rounded-xl border shadow-sm p-5 min-h-[400px]">
+					<section className="lg:col-span-2 bg-white rounded-xl border shadow-sm p-5 min-h-[400px]" data-aos="fade-left" data-aos-duration="600" data-aos-delay="100">
 						<div className="flex items-center justify-between mb-4">
 							<div>
 								<h2 className="text-sm font-semibold">Edit Halaman Materi</h2>
