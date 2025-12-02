@@ -1,21 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getUser } from "@/lib/localStorageHelper";
 import {
 	AdminCourse,
-	createEmptyAdminCourse,
 	getAdminCourses,
 	saveAdminCourses,
 } from "@/lib/adminCoursesStorage";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 
-export default function AdminPage() {
+export default function AdminManagementPage() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(true);
-	const [course, setCourse] = useState<AdminCourse | null>(null);
-	const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
-	const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+	const [courses, setCourses] = useState<AdminCourse[]>([]);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
 
 	// Protect route: only admin can access
 	useEffect(() => {
@@ -26,51 +32,25 @@ export default function AdminPage() {
 		}
 
 		const existing = getAdminCourses();
-		if (existing.length > 0) {
-			const first = existing[0];
-			setCourse(first);
-			const firstModule = first.modules?.[0];
-			setSelectedModuleId(firstModule ? firstModule.id : null);
-			const firstItem = firstModule?.items?.[0];
-			setSelectedItemId(firstItem ? firstItem.id : null);
-		} else {
-			const empty = createEmptyAdminCourse();
-			setCourse(empty);
-			setSelectedModuleId(empty.modules[0].id);
-			setSelectedItemId(empty.modules[0].items[0].id);
-			saveAdminCourses([empty]);
-		}
-
+		setCourses(existing);
 		setLoading(false);
 	}, [router]);
 
-	const selectedModule = useMemo(
-		() => course?.modules.find((m) => m.id === selectedModuleId) || null,
-		[course, selectedModuleId]
-	);
-
-	const selectedItem = useMemo(
-		() => selectedModule?.items.find((i) => i.id === selectedItemId) || null,
-		[selectedModule, selectedItemId]
-	);
-
-	const updateCourse = (updater: (c: AdminCourse) => AdminCourse) => {
-		setCourse((prev) => {
-			if (!prev) return prev;
-			const updated = updater(prev);
-			saveAdminCourses([updated]);
-			return updated;
-		});
+	const handleDeleteCourse = () => {
+		if (!courseToDelete) return;
+		const updated = courses.filter((c) => c.id !== courseToDelete);
+		saveAdminCourses(updated);
+		setCourses(updated);
+		setDeleteDialogOpen(false);
+		setCourseToDelete(null);
 	};
 
-	const handleSave = () => {
-		if (course) {
-			saveAdminCourses([course]);
-			window.alert("Perubahan course berhasil disimpan.");
-		}
+	const confirmDelete = (courseId: string) => {
+		setCourseToDelete(courseId);
+		setDeleteDialogOpen(true);
 	};
 
-	if (loading || !course) {
+	if (loading) {
 		return (
 			<div className="min-h-[80vh] flex items-center justify-center">
 				<p className="text-sm text-neutral-500">Memuat halaman admin...</p>
@@ -95,12 +75,15 @@ export default function AdminPage() {
 
 					<nav className="px-3 py-4 text-sm space-y-1">
 						<button className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-neutral-600 hover:bg-neutral-100">
+							<span>📊</span>
 							<span>Dashboard</span>
 						</button>
 						<button className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white">
+							<span>📚</span>
 							<span>Course Management</span>
 						</button>
 						<button className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-neutral-600 hover:bg-neutral-100">
+							<span>👥</span>
 							<span>User Management</span>
 						</button>
 					</nav>
@@ -120,332 +103,168 @@ export default function AdminPage() {
 					<div>
 						<h1 className="text-2xl font-bold">Manajemen Kursus</h1>
 						<p className="text-sm text-neutral-500 mt-1">
-							Kelola struktur kursus, modules, dan konten materi.
+							Kelola semua kursus yang Anda buat. Tambah, edit, atau hapus kursus.
 						</p>
 					</div>
-					<div className="flex items-center gap-3">
-						<button
-							onClick={() => router.push("/katalog")}
-							className="px-4 py-2 text-sm border rounded-md text-neutral-700 hover:bg-neutral-100"
-						>
-							Back to Courses
-						</button>
-						<button
-							onClick={handleSave}
-							className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
-						>
-							Simpan
-						</button>
+					<Link
+						href="/admin/courses/new"
+						className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2"
+					>
+						<span>+</span>
+						<span>Buat Kursus Baru</span>
+					</Link>
+				</div>
+
+				{/* Stats Cards */}
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+					<div className="bg-white rounded-xl border p-5">
+						<div className="flex items-center gap-3">
+							<div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+								📚
+							</div>
+							<div>
+								<p className="text-2xl font-bold">{courses.length}</p>
+								<p className="text-xs text-neutral-500">Total Kursus</p>
+							</div>
+						</div>
+					</div>
+					<div className="bg-white rounded-xl border p-5">
+						<div className="flex items-center gap-3">
+							<div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+								✅
+							</div>
+							<div>
+								<p className="text-2xl font-bold">
+									{courses.filter((c) => c.title && c.modules.length > 0).length}
+								</p>
+								<p className="text-xs text-neutral-500">Kursus Aktif</p>
+							</div>
+						</div>
+					</div>
+					<div className="bg-white rounded-xl border p-5">
+						<div className="flex items-center gap-3">
+							<div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+								📖
+							</div>
+							<div>
+								<p className="text-2xl font-bold">
+									{courses.reduce((acc, c) => acc + c.modules.length, 0)}
+								</p>
+								<p className="text-xs text-neutral-500">Total Modul</p>
+							</div>
+						</div>
 					</div>
 				</div>
 
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-					{/* Panel kiri: Course Details + Modules */}
-					<div className="space-y-6">
-						<section className="bg-white rounded-xl border shadow-sm p-5">
-							<h2 className="text-sm font-semibold mb-4">Course Details</h2>
+				{/* Course List */}
+				<section className="bg-white rounded-xl border shadow-sm">
+					<div className="p-5 border-b">
+						<h2 className="text-sm font-semibold">Daftar Kursus</h2>
+					</div>
 
-							<div className="space-y-3 text-sm">
-								<div>
-									<label className="block text-xs font-medium mb-1">Judul Kursus</label>
-									<input
-										className="w-full border rounded-md px-3 py-2 text-sm"
-										value={course.title}
-										onChange={(e) =>
-											updateCourse((c) => ({ ...c, title: e.target.value }))
-										}
-									/>
-								</div>
-
-								<div>
-									<label className="block text-xs font-medium mb-1">Deskripsi</label>
-									<textarea
-										className="w-full border rounded-md px-3 py-2 text-sm min-h-[80px]"
-										value={course.description || ""}
-										onChange={(e) =>
-											updateCourse((c) => ({ ...c, description: e.target.value }))
-										}
-									/>
-								</div>
-
-								<div>
-									<label className="block text-xs font-medium mb-1">Thumbnail Kursus (URL)</label>
-									<input
-										className="w-full border rounded-md px-3 py-2 text-sm"
-										placeholder="https://..."
-										value={course.image}
-										onChange={(e) =>
-											updateCourse((c) => ({ ...c, image: e.target.value }))
-										}
-									/>
-								</div>
-
-								<div>
-									<label className="block text-xs font-medium mb-1">Harga Lifetime (IDR)</label>
-									<input
-										type="number"
-										className="w-full border rounded-md px-3 py-2 text-sm"
-										value={course.price}
-										onChange={(e) =>
-											updateCourse((c) => ({ ...c, price: Number(e.target.value) || 0 }))
-										}
-									/>
-								</div>
+					{courses.length === 0 ? (
+						<div className="p-12 text-center">
+							<div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-100 flex items-center justify-center text-2xl">
+								📚
 							</div>
-						</section>
-
-						{/* Modules */}
-						<section className="bg-white rounded-xl border shadow-sm p-5">
-							<div className="flex items-center justify-between mb-3">
-								<h2 className="text-sm font-semibold">Modules</h2>
-							</div>
-
-							<div className="space-y-2 text-sm">
-								{course.modules.map((mod, idx) => {
-									const isActive = mod.id === selectedModuleId;
-									return (
-										<div key={mod.id} className="border rounded-md overflow-hidden">
-											<button
-												className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs ${
-													isActive ? "bg-blue-50" : "bg-neutral-50 hover:bg-neutral-100"
-												}`}
-												onClick={() => {
-													setSelectedModuleId(mod.id);
-													const firstItem = mod.items[0];
-													setSelectedItemId(firstItem ? firstItem.id : null);
-												}}
-											>
-												<span className="font-medium flex items-center gap-2">
-													<span className="text-[11px] text-neutral-500">
-														{idx + 1}.
-													</span>
-													{mod.title || "Untitled Module"}
-												</span>
-											</button>
-
-											{isActive && (
-												<div className="bg-white border-t px-3 py-2 space-y-1">
-													{mod.items.map((item) => (
-														<button
-															key={item.id}
-															className={`w-full flex items-center gap-2 rounded-md px-2 py-1 text-xs text-left ${
-																item.id === selectedItemId
-																	? "bg-blue-50 text-blue-700"
-																	: "text-neutral-700 hover:bg-neutral-50"
-															}`}
-															onClick={() => setSelectedItemId(item.id)}
-														>
-															<span>
-																{item.type === "quiz" ? "📄 Quiz" : "📄 Halaman Materi"}
-															</span>
-														</button>
-													))}
-
-													<div className="flex gap-2 pt-2">
-														<button
-															className="flex-1 border rounded-md px-2 py-1 text-[11px] hover:bg-neutral-50"
-															onClick={() =>
-																updateCourse((c) => {
-																	const modules = c.modules.map((m) => {
-																		if (m.id !== mod.id) return m;
-																		const newItemId = `item_${Date.now()}`;
-																		return {
-																			...m,
-																			items: [
-																				...m.items,
-																				{
-																					id: newItemId,
-																					title: "Halaman Baru",
-																					type: "page" as const,
-																					content: "",
-																				},
-																			],
-																		};
-																	});
-																	return { ...c, modules };
-																})
-															}
-														>
-															+ Halaman Materi
-														</button>
-														<button
-															className="flex-1 border rounded-md px-2 py-1 text-[11px] hover:bg-neutral-50"
-															onClick={() =>
-																updateCourse((c) => {
-																	const modules = c.modules.map((m) => {
-																		if (m.id !== mod.id) return m;
-																		const newItemId = `item_${Date.now()}`;
-																		return {
-																			...m,
-																			items: [
-																				...m.items,
-																				{
-																					id: newItemId,
-																					title: "Quiz Baru",
-																					type: "quiz" as const,
-																					content: "",
-																				},
-																			],
-																		};
-																	});
-																	return { ...c, modules };
-																})
-															}
-														>
-															+ Kuis
-														</button>
-													</div>
+							<h3 className="text-lg font-semibold mb-2">Belum ada kursus</h3>
+							<p className="text-sm text-neutral-500 mb-4">
+								Mulai buat kursus pertama Anda untuk memulai
+							</p>
+							<Link
+								href="/admin/courses/new"
+								className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+							>
+								<span>+</span>
+								<span>Buat Kursus Baru</span>
+							</Link>
+						</div>
+					) : (
+						<div className="divide-y">
+							{courses.map((course) => (
+								<div
+									key={course.id}
+									className="p-5 flex items-center justify-between hover:bg-neutral-50 transition-colors"
+								>
+									<div className="flex items-center gap-4">
+										<div className="w-16 h-12 rounded-lg bg-neutral-100 overflow-hidden">
+											{course.image ? (
+												<img
+													src={course.image}
+													alt={course.title}
+													className="w-full h-full object-cover"
+												/>
+											) : (
+												<div className="w-full h-full flex items-center justify-center text-neutral-400 text-lg">
+													📖
 												</div>
 											)}
 										</div>
-									);
-								})}
-
-								<button
-									className="w-full mt-2 border-dashed border rounded-md px-3 py-2 text-xs text-neutral-600 hover:bg-neutral-50"
-									onClick={() =>
-										updateCourse((c) => {
-											const newId = `module_${Date.now()}`;
-											const newModule = {
-												id: newId,
-												title: `Module ${c.modules.length + 1}`,
-												items: [],
-											};
-											return { ...c, modules: [...c.modules, newModule] };
-										})
-									}
-								>
-									+ Tambah Modul Baru
-								</button>
-							</div>
-						</section>
-					</div>
-
-					{/* Panel kanan: Edit Halaman Materi */}
-					<section className="lg:col-span-2 bg-white rounded-xl border shadow-sm p-5 min-h-[400px]">
-						<div className="flex items-center justify-between mb-4">
-							<div>
-								<h2 className="text-sm font-semibold">Edit Halaman Materi</h2>
-								<p className="text-xs text-neutral-500 mt-1">
-									Atur judul dan konten untuk halaman materi atau quiz.
-								</p>
-							</div>
+										<div>
+											<h3 className="font-semibold text-sm">
+												{course.title || "Untitled Course"}
+											</h3>
+											<p className="text-xs text-neutral-500 mt-0.5">
+												{course.modules.length} modul •{" "}
+												{course.modules.reduce((acc, m) => acc + m.items.length, 0)}{" "}
+												materi
+											</p>
+											<p className="text-xs text-neutral-400 mt-0.5">
+												{course.price > 0
+													? `Rp ${course.price.toLocaleString("id-ID")}`
+													: "Gratis"}
+											</p>
+										</div>
+									</div>
+									<div className="flex items-center gap-2">
+										<Link
+											href={`/admin/courses/${course.id}`}
+											className="px-3 py-1.5 text-xs rounded-md border text-neutral-700 hover:bg-neutral-100 transition-colors"
+										>
+											Edit
+										</Link>
+										<button
+											onClick={() => confirmDelete(course.id)}
+											className="px-3 py-1.5 text-xs rounded-md border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+										>
+											Hapus
+										</button>
+									</div>
+								</div>
+							))}
 						</div>
-
-						{selectedModule && selectedItem ? (
-							<div className="space-y-4 text-sm">
-								<div>
-									<label className="block text-xs font-medium mb-1">Judul Halaman</label>
-									<input
-										className="w-full border rounded-md px-3 py-2 text-sm"
-										value={selectedItem.title}
-										onChange={(e) => {
-											const value = e.target.value;
-											updateCourse((c) => ({
-												...c,
-												modules: c.modules.map((m) => {
-													if (m.id !== selectedModule.id) return m;
-													return {
-														...m,
-														items: m.items.map((it) =>
-															it.id === selectedItem.id ? { ...it, title: value } : it
-														),
-													};
-												}),
-											}));
-										}}
-									/>
-								</div>
-
-								<div>
-									<label className="block text-xs font-medium mb-1">Konten</label>
-									<textarea
-										className="w-full border rounded-md px-3 py-2 text-sm min-h-[160px]"
-										value={selectedItem.content}
-										onChange={(e) => {
-											const value = e.target.value;
-											updateCourse((c) => ({
-												...c,
-												modules: c.modules.map((m) => {
-													if (m.id !== selectedModule.id) return m;
-													return {
-														...m,
-														items: m.items.map((it) =>
-															it.id === selectedItem.id ? { ...it, content: value } : it
-														),
-													};
-												}),
-											}));
-										}}
-									/>
-								</div>
-
-								<div className="grid md:grid-cols-2 gap-4">
-									<div>
-										<label className="block text-xs font-medium mb-1">
-											URL Gambar / Thumbnail (opsional)
-										</label>
-										<input
-											className="w-full border rounded-md px-3 py-2 text-sm"
-											placeholder="https://..."
-											value={selectedItem.mediaUrl || ""}
-											onChange={(e) => {
-												const value = e.target.value;
-												updateCourse((c) => ({
-													...c,
-													modules: c.modules.map((m) => {
-														if (m.id !== selectedModule.id) return m;
-														return {
-															...m,
-															items: m.items.map((it) =>
-																it.id === selectedItem.id ? { ...it, mediaUrl: value } : it
-															),
-														};
-													}),
-												}));
-											}}
-										/>
-									</div>
-
-									<div>
-										<label className="block text-xs font-medium mb-1">
-											URL Video (opsional)
-										</label>
-										<input
-											className="w-full border rounded-md px-3 py-2 text-sm"
-											placeholder="https://youtube.com/... atau embed URL"
-											onChange={(e) => {
-												const value = e.target.value;
-												updateCourse((c) => ({
-													...c,
-													modules: c.modules.map((m) => {
-														if (m.id !== selectedModule.id) return m;
-														return {
-															...m,
-															items: m.items.map((it) =>
-																it.id === selectedItem.id
-																	? { ...it, mediaUrl: value }
-																	: it
-															),
-														};
-													}),
-												}));
-											}}
-										/>
-										<p className="text-[11px] text-neutral-400 mt-1">
-											Untuk demo, kita simpan sebagai URL biasa di localStorage.
-										</p>
-									</div>
-								</div>
-							</div>
-						) : (
-							<p className="text-sm text-neutral-500">
-								Pilih module dan halaman materi untuk mulai mengedit.
-							</p>
-						)}
-					</section>
-				</div>
+					)}
+				</section>
 			</main>
+
+			{/* Delete Confirmation Dialog */}
+			<Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle>Konfirmasi Hapus</DialogTitle>
+					</DialogHeader>
+					<div className="py-4">
+						<p className="text-sm text-neutral-600">
+							Apakah Anda yakin ingin menghapus kursus ini? Tindakan ini tidak dapat
+							dibatalkan.
+						</p>
+					</div>
+					<div className="flex justify-end gap-3">
+						<button
+							onClick={() => setDeleteDialogOpen(false)}
+							className="px-4 py-2 text-sm rounded-md border text-neutral-700 hover:bg-neutral-100"
+						>
+							Batal
+						</button>
+						<button
+							onClick={handleDeleteCourse}
+							className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700"
+						>
+							Hapus
+						</button>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

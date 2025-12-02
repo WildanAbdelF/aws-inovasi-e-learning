@@ -4,6 +4,7 @@ export interface CourseModuleContent {
   type: "page" | "quiz";
   content: string;
   mediaUrl?: string;
+  videoUrl?: string;
 }
 
 export interface CourseModule {
