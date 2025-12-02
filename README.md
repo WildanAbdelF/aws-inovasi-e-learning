@@ -18,7 +18,7 @@ Ikuti langkah-langkah berikut untuk menjalankan project dari awal.
 Jika project sudah ada di GitHub:
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/WildanAbdelF/aws-inovasi-e-learning
 cd aws-inovasi-e-learning
 ```
 
