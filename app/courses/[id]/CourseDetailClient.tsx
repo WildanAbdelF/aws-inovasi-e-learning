@@ -26,6 +26,20 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
     setAlreadyPurchased(list.some((c) => c.id === String(course.id)));
   }, [course.id]);
 
+  const getFirstLessonPath = () => {
+    const firstModule = course.modules?.[0];
+    const firstItem = firstModule?.items[0];
+    if (!firstModule || !firstItem) return null;
+    return `/learn/${course.id}/${firstModule.id}/${firstItem.id}`;
+  };
+
+  const handleContinueLearning = () => {
+    const path = getFirstLessonPath();
+    if (path) {
+      router.push(path);
+    }
+  };
+
   const handleConfirmPurchase = () => {
     addPurchase({ id: String(course.id), title: course.title, price: course.price });
     setOpen(false);
@@ -103,13 +117,21 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
             </div>
 
             <div className="flex flex-col gap-3">
-              <button
-                className="w-full bg-red-600 text-white py-3 rounded-lg disabled:opacity-70 disabled:cursor-default"
-                onClick={() => !alreadyPurchased && setOpen(true)}
-                disabled={alreadyPurchased}
-              >
-                {alreadyPurchased ? "Lanjutkan Pembelajaran" : "Beli Lifetime"}
-              </button>
+              {alreadyPurchased ? (
+                <button
+                  className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
+                  onClick={handleContinueLearning}
+                >
+                  Lanjutkan Pembelajaran
+                </button>
+              ) : (
+                <button
+                  className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
+                  onClick={() => setOpen(true)}
+                >
+                  Beli Lifetime
+                </button>
+              )}
               <button className="w-full border border-blue-600 text-blue-600 py-3 rounded-lg">
                 Gabung Langganan
               </button>
