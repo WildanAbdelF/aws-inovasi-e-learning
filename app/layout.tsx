@@ -1,9 +1,9 @@
 import "./globals.css";
 import { Montserrat } from "next/font/google";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import { AuthProvider } from "@/components/AuthProvider";
-import { AOSProvider } from "@/components/AOSProvider";
+import { Navbar } from "@/components/layout";
+import { Footer } from "@/components/layout";
+import { AuthProvider } from "@/components/providers/AuthProvider";
+import { AOSProvider } from "@/components/providers/AOSProvider";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 

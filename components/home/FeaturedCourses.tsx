@@ -1,6 +1,6 @@
-import CourseCard from "./CourseCard";
-import { dummyCourses } from "../lib/dummyCourses";
-import { Button } from "./ui/button";
+import CourseCard from "@/components/course/CourseCard";
+import { dummyCourses } from "@/lib/data";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function FeaturedCourses() {

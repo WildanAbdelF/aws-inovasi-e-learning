@@ -1,11 +1,11 @@
 "use client";
 
-import HeroSection from "../components/HeroSection";
-import FeaturedCourses from "../components/FeaturedCourses";
-import LearningModels from "../components/LearningModels";
-import Testimonials from "../components/Testimonials";
-import CTASection from "../components/CTASection";
-import { useInView } from "@/lib/useInView";
+import HeroSection from "@/components/home/HeroSection";
+import FeaturedCourses from "@/components/home/FeaturedCourses";
+import LearningModels from "@/components/home/LearningModels";
+import Testimonials from "@/components/home/Testimonials";
+import CTASection from "@/components/home/CTASection";
+import { useInView } from "@/lib/hooks";
 
 function AnimatedSection({
   children,

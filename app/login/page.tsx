@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getUser, saveUser, StoredUser } from "@/lib/localStorageHelper";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/components/providers";
 
 export default function LoginPage() {
   const router = useRouter();

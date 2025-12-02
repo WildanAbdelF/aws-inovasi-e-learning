@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { dummyCourses } from "@/lib/dummyCourses";
+import { dummyCourses } from "@/lib/data";
 import { addPurchase, getPurchases } from "@/lib/localStorageHelper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useInView } from "@/lib/useInView";
+import { useInView } from "@/lib/hooks";
 
 export type CourseDetailClientProps = {
   course: (typeof dummyCourses)[number];

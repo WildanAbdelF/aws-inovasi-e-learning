@@ -256,7 +256,7 @@ export default function AdminPage() {
 																				{
 																					id: newItemId,
 																					title: "Halaman Baru",
-																					type: "page",
+																					type: "page" as const,
 																					content: "",
 																				},
 																			],
@@ -282,7 +282,7 @@ export default function AdminPage() {
 																				{
 																					id: newItemId,
 																					title: "Quiz Baru",
-																					type: "quiz",
+																					type: "quiz" as const,
 																					content: "",
 																				},
 																			],

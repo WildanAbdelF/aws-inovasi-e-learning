@@ -1,4 +1,4 @@
-import { dummyCourses } from "@/lib/dummyCourses";
+import { dummyCourses } from "@/lib/data";
 import Link from "next/link";
 import CourseDetailClient from "./CourseDetailClient";
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUser, getPurchases, PurchasedCourse } from "@/lib/localStorageHelper";
-import { dummyCourses } from "@/lib/dummyCourses";
+import { dummyCourses } from "@/lib/data";
 
 export default function DashboardPage() {
 	const router = useRouter();

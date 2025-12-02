@@ -1,7 +1,7 @@
 "use client";
 
-import CourseCatalog from "@/components/CourseCatalog";
-import { useInView } from "@/lib/useInView";
+import { CourseCatalog } from "@/components/course";
+import { useInView } from "@/lib/hooks";
 
 function AnimatedWrapper({ children }: { children: React.ReactNode }) {
   const { ref, inView } = useInView({ threshold: 0.2 });

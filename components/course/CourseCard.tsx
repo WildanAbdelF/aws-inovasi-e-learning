@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, CardContent } from "./ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Course } from "@/types/course";
 import { getPurchases } from "@/lib/localStorageHelper";
 import { useEffect, useState } from "react";

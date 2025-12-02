@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import CourseList from "./CourseList";
-import { dummyCourses } from "@/lib/dummyCourses";
+import { dummyCourses } from "@/lib/data";
 import { getAdminCourses } from "@/lib/adminCoursesStorage";
 
 export default function CourseCatalog() {
