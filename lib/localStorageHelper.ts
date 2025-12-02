@@ -1,19 +1,51 @@
 
 export const LS_KEYS = {
-	USER: "lms_user",
-  PURCHASES: "lms_purchases",
+	USER: "lms_user", // Current logged in user (session)
+	REGISTERED_USERS: "lms_registered_users", // All registered users (persistent)
+	PURCHASES: "lms_purchases",
 };
 
 export type StoredUser = {
 	name: string;
 	email: string;
 	password: string;
-  role: "admin" | "user";
+	role: "admin" | "user";
 };
 
 export function isBrowser() {
 	return typeof window !== "undefined";
 }
+
+// === REGISTERED USERS (Persistent - not cleared on logout) ===
+
+export function getRegisteredUsers(): StoredUser[] {
+	if (!isBrowser()) return [];
+	const raw = window.localStorage.getItem(LS_KEYS.REGISTERED_USERS);
+	if (!raw) return [];
+	try {
+		return JSON.parse(raw) as StoredUser[];
+	} catch {
+		return [];
+	}
+}
+
+export function registerUser(user: StoredUser): boolean {
+	if (!isBrowser()) return false;
+	const users = getRegisteredUsers();
+	// Check if email already exists
+	const exists = users.some((u) => u.email === user.email);
+	if (exists) return false;
+	const updated = [...users, user];
+	window.localStorage.setItem(LS_KEYS.REGISTERED_USERS, JSON.stringify(updated));
+	return true;
+}
+
+export function findRegisteredUser(email: string): StoredUser | null {
+	const users = getRegisteredUsers();
+	return users.find((u) => u.email === email) || null;
+}
+
+// === CURRENT SESSION (Cleared on logout) ===
 
 export function saveUser(user: StoredUser) {
 	if (!isBrowser()) return;

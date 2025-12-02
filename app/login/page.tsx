@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getUser, saveUser, StoredUser } from "@/lib/localStorageHelper";
+import { findRegisteredUser, saveUser, StoredUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers";
 
 export default function LoginPage() {
@@ -27,19 +27,20 @@ export default function LoginPage() {
   });
 
   function onSubmit(values: any) {
-    const stored = getUser();
+    // Find user from registered users list (persistent)
+    const stored = findRegisteredUser(values.email);
 
     if (!stored) {
       window.alert("Akun belum terdaftar. Silakan daftar terlebih dahulu.");
       return;
     }
 
-    if (stored.email !== values.email || stored.password !== values.password) {
+    if (stored.password !== values.password) {
       window.alert("Email atau password salah.");
       return;
     }
 
-    // Set sesi di context + pastikan data user tersimpan
+    // Set session in context + save current user
     const user: StoredUser = {
       name: stored.name,
       email: stored.email,

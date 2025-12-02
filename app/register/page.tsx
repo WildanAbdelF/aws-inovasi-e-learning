@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { saveUser, StoredUser } from "@/lib/localStorageHelper";
+import { registerUser, saveUser, StoredUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers";
 
 export default function RegisterPage() {
@@ -36,10 +36,17 @@ export default function RegisterPage() {
       role: values.email === "admin@example.com" ? "admin" : "user",
     };
 
-    // Simpan user ke localStorage
+    // Register user to persistent storage
+    const success = registerUser(user);
+    if (!success) {
+      window.alert("Email sudah terdaftar. Silakan gunakan email lain atau login.");
+      return;
+    }
+
+    // Save to current session
     saveUser(user);
 
-    // Set sesi di context supaya navbar langsung berubah jika diperlukan
+    // Set session in context so navbar updates immediately
     login(user);
 
     window.alert("Pendaftaran berhasil. Anda sudah otomatis login.");
