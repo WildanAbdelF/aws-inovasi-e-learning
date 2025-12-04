@@ -111,24 +111,34 @@ export default function Navbar() {
                 </svg>
               </button>
 
-              {/* Avatar + nama user */}
-              <div className="flex items-center gap-2">
+              {/* Avatar + nama user - Clickable */}
+              <button
+                onClick={() => {
+                  if (user?.role === "admin") {
+                    router.push("/admin/dashboard");
+                  } else {
+                    router.push("/settings");
+                  }
+                }}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
                 <div className="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center text-sm font-semibold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-sm text-neutral-800 max-w-[140px] truncate">
                   {userName}
                 </span>
-                <button
-                  onClick={() => {
-                    logout();
-                    router.push("/");
-                  }}
-                  className="text-xs text-neutral-500 hover:text-neutral-800 ml-1"
-                >
-                  Logout
-                </button>
-              </div>
+              </button>
+              
+              <button
+                onClick={() => {
+                  logout();
+                  router.push("/");
+                }}
+                className="text-xs text-neutral-500 hover:text-neutral-800 ml-1"
+              >
+                Logout
+              </button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -170,16 +180,31 @@ export default function Navbar() {
           </Link>
 
           {isLoggedIn ? (
-            <button
-              onClick={() => {
-                setOpen(false);
-                logout();
-                router.push("/");
-              }}
-              className="text-left text-neutral-500 hover:text-neutral-800"
-            >
-              Logout
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  if (user?.role === "admin") {
+                    router.push("/admin/dashboard");
+                  } else {
+                    router.push("/settings");
+                  }
+                }}
+                className="text-left text-neutral-700 hover:text-neutral-900"
+              >
+                {user?.role === "admin" ? "Admin Dashboard" : "Pengaturan Akun"}
+              </button>
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  logout();
+                  router.push("/");
+                }}
+                className="text-left text-neutral-500 hover:text-neutral-800"
+              >
+                Logout
+              </button>
+            </>
           ) : (
             <div className="flex flex-col gap-2 pt-2">
               <Button asChild variant="outline" size="sm" className="w-full border-red-400">
