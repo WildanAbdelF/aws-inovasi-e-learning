@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { getUser } from "@/lib/localStorageHelper";
+import { getUser, clearUser, clearPurchases } from "@/lib/localStorageHelper";
 import {
 	AdminCourse,
 	getAdminCourses,
@@ -22,6 +22,7 @@ export default function EditCoursePage() {
 	const courseId = params?.id as string;
 
 	const [loading, setLoading] = useState(true);
+	const [user, setUser] = useState<any>(null);
 	const [course, setCourse] = useState<AdminCourse | null>(null);
 	const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
 	const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -35,6 +36,7 @@ export default function EditCoursePage() {
 			router.replace("/dashboard");
 			return;
 		}
+		setUser(stored);
 
 		// Load existing course
 		const existing = getAdminCourses();
