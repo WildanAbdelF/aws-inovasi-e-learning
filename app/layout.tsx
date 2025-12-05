@@ -1,11 +1,21 @@
 import "./globals.css";
-import { Montserrat } from "next/font/google";
+import { Montserrat, Poppins } from "next/font/google";
 import { Navbar } from "@/components/layout";
 import { Footer } from "@/components/layout";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AOSProvider } from "@/components/providers/AOSProvider";
 
-const montserrat = Montserrat({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const montserrat = Montserrat({ 
+  subsets: ["latin"], 
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-montserrat",
+});
+
+const poppins = Poppins({ 
+  subsets: ["latin"], 
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
 
 export const metadata = {
   title: "AWS Inovasi E-Learning",
@@ -15,7 +25,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
-      <body className={montserrat.className + " bg-white text-neutral-900"}>
+      <body className={`${montserrat.variable} ${poppins.variable} font-poppins bg-white text-neutral-900`}>
         <AuthProvider>
           <AOSProvider>
             <Navbar />
