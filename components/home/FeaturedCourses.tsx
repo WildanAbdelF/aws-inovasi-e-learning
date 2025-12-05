@@ -1,5 +1,5 @@
 import CourseCard from "@/components/course/CourseCard";
-import { dummyCourses } from "@/lib/data";
+import { dummyCourses } from "@/lib/data/courses.data";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 

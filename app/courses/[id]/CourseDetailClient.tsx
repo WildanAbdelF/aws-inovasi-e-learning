@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { dummyCourses } from "@/lib/data";
+import { dummyCourses } from "@/lib/data/courses.data";
 import { addPurchase, getPurchases } from "@/lib/localStorageHelper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInView } from "@/lib/hooks";

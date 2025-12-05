@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { dummyCourses } from "@/lib/data";
+import { dummyCourses } from "@/lib/data/courses.data";
 import { getPurchases } from "@/lib/localStorageHelper";
 
 type ProgressMap = Record<string, string[]>;

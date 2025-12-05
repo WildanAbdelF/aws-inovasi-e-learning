@@ -1,7 +1,7 @@
 import "./globals.css";
 import { Montserrat, Poppins } from "next/font/google";
-import { Navbar } from "@/components/layout";
-import { Footer } from "@/components/layout";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AOSProvider } from "@/components/providers/AOSProvider";
 
