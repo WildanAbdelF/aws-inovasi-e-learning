@@ -131,7 +131,7 @@ export default function EditCoursePage() {
 
 	if (loading) {
 		return (
-			<div className="min-h-[80vh] flex items-center justify-center">
+			<div className="min-h-screen flex items-center justify-center">
 				<p className="text-sm text-neutral-500">Memuat halaman...</p>
 			</div>
 		);
@@ -139,9 +139,11 @@ export default function EditCoursePage() {
 
 	if (notFound) {
 		return (
-			<div className="min-h-[80vh] flex flex-col items-center justify-center">
-				<div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-2xl mb-4">
-					❌
+			<div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50">
+				<div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+					<svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+					</svg>
 				</div>
 				<h2 className="text-lg font-semibold mb-2">Kursus Tidak Ditemukan</h2>
 				<p className="text-sm text-neutral-500 mb-4">
@@ -149,7 +151,7 @@ export default function EditCoursePage() {
 				</p>
 				<Link
 					href="/admin"
-					className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+					className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
 				>
 					Kembali ke Management
 				</Link>
@@ -163,68 +165,96 @@ export default function EditCoursePage() {
 
 	return (
 		<div className="min-h-screen flex bg-neutral-50">
-			{/* Sidebar kiri */}
-			<aside className="w-60 border-r bg-white flex flex-col justify-between">
+			{/* Sidebar */}
+			<aside className="w-56 bg-white border-r flex flex-col justify-between">
 				<div>
+					{/* Logo */}
 					<div className="h-16 border-b flex items-center px-4 gap-2">
-						<div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-sm font-bold">
-							L
+						<div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center">
+							<svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M12 2L3 7v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5z" />
+							</svg>
 						</div>
-						<div>
-							<p className="text-sm font-semibold">LMS Admin</p>
-							<p className="text-[11px] text-neutral-500">Course Editor</p>
-						</div>
+						<span className="font-semibold text-neutral-800">Admin LMS</span>
 					</div>
 
-					<nav className="px-3 py-4 text-sm space-y-1">
+					{/* Nav */}
+					<nav className="p-3 space-y-1 text-sm">
+						<Link
+							href="/admin/dashboard"
+							className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-600 hover:bg-neutral-100"
+						>
+							<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+							</svg>
+							Dashboard
+						</Link>
 						<Link
 							href="/admin"
-							className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-neutral-600 hover:bg-neutral-100"
+							className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 text-blue-600 font-medium"
 						>
-							<span>📊</span>
-							<span>Course Management</span>
+							<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+							</svg>
+							Course Management
 						</Link>
 						<Link
-							href="/admin/courses/new"
-							className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-neutral-600 hover:bg-neutral-100"
+							href="/admin/users"
+							className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-600 hover:bg-neutral-100"
 						>
-							<span>➕</span>
-							<span>Buat Kursus Baru</span>
+							<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+							</svg>
+							User Management
 						</Link>
-						<button className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white">
-							<span>✏️</span>
-							<span>Edit Kursus</span>
-						</button>
 					</nav>
 				</div>
 
-				<button
-					className="flex items-center gap-2 px-4 py-3 text-xs text-neutral-500 hover:text-neutral-800 border-t"
-					onClick={() => router.push("/admin")}
-				>
-					<span>← Kembali ke Management</span>
-				</button>
+				{/* User info di bawah */}
+				<div className="border-t p-4">
+					<div className="flex items-center gap-3 mb-3">
+						<div className="w-9 h-9 rounded-full bg-amber-400 flex items-center justify-center text-white font-semibold text-sm">
+							{user?.name?.charAt(0).toUpperCase() || "A"}
+						</div>
+						<div className="text-sm">
+							<p className="font-medium text-neutral-800">{user?.name || "Admin User"}</p>
+							<p className="text-xs text-neutral-500">{user?.email}</p>
+						</div>
+					</div>
+					<button
+						onClick={() => {
+							clearUser();
+							clearPurchases();
+							router.push("/");
+						}}
+						className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800"
+					>
+						<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+						</svg>
+						Logout
+					</button>
+				</div>
 			</aside>
 
-			{/* Konten utama */}
+			{/* Main content */}
 			<main className="flex-1 p-8">
-				<div className="flex items-center justify-between mb-6" data-aos="fade-down" data-aos-duration="500">
+				{/* Header */}
+				<div className="flex items-center justify-between mb-8" data-aos="fade-down" data-aos-duration="500">
 					<div>
-						<h1 className="text-2xl font-bold">Edit Kursus</h1>
-						<p className="text-sm text-neutral-500 mt-1">
-							Perbarui struktur kursus, modules, dan konten materi.
-						</p>
+						<h1 className="text-2xl font-bold text-neutral-900">Edit Kursus</h1>
+						<p className="text-neutral-500 text-sm">Perbarui struktur kursus, modules, dan konten materi.</p>
 					</div>
 					<div className="flex items-center gap-3">
 						<Link
 							href="/admin"
-							className="px-4 py-2 text-sm border rounded-md text-neutral-700 hover:bg-neutral-100"
+							className="px-4 py-2.5 text-sm border rounded-lg text-neutral-700 hover:bg-neutral-100 transition-colors"
 						>
 							Batal
 						</Link>
 						<button
 							onClick={handleSave}
-							className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+							className="px-4 py-2.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium transition-colors"
 						>
 							Simpan Perubahan
 						</button>
@@ -233,17 +263,17 @@ export default function EditCoursePage() {
 
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 					{/* Panel kiri: Course Details + Modules */}
-					<div className="space-y-6" data-aos="fade-right" data-aos-duration="600">
-						<section className="bg-white rounded-xl border shadow-sm p-5">
+					<div className="space-y-6" data-aos="fade-up" data-aos-duration="500">
+						<section className="bg-white rounded-xl border p-5">
 							<h2 className="text-sm font-semibold mb-4">Course Details</h2>
 
 							<div className="space-y-3 text-sm">
 								<div>
-									<label className="block text-xs font-medium mb-1">
+									<label className="block text-xs font-medium text-neutral-700 mb-1">
 										Judul Kursus <span className="text-red-500">*</span>
 									</label>
 									<input
-										className="w-full border rounded-md px-3 py-2 text-sm"
+										className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										placeholder="Masukkan judul kursus"
 										value={course.title}
 										onChange={(e) =>
@@ -253,9 +283,9 @@ export default function EditCoursePage() {
 								</div>
 
 								<div>
-									<label className="block text-xs font-medium mb-1">Deskripsi</label>
+									<label className="block text-xs font-medium text-neutral-700 mb-1">Deskripsi</label>
 									<textarea
-										className="w-full border rounded-md px-3 py-2 text-sm min-h-[80px]"
+										className="w-full border rounded-lg px-3 py-2 text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										placeholder="Deskripsi singkat tentang kursus ini"
 										value={course.description || ""}
 										onChange={(e) =>
@@ -265,11 +295,11 @@ export default function EditCoursePage() {
 								</div>
 
 								<div>
-									<label className="block text-xs font-medium mb-1">
+									<label className="block text-xs font-medium text-neutral-700 mb-1">
 										Thumbnail Kursus (URL)
 									</label>
 									<input
-										className="w-full border rounded-md px-3 py-2 text-sm"
+										className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										placeholder="https://..."
 										value={course.image}
 										onChange={(e) =>
@@ -279,12 +309,12 @@ export default function EditCoursePage() {
 								</div>
 
 								<div>
-									<label className="block text-xs font-medium mb-1">
+									<label className="block text-xs font-medium text-neutral-700 mb-1">
 										Harga Lifetime (IDR)
 									</label>
 									<input
 										type="number"
-										className="w-full border rounded-md px-3 py-2 text-sm"
+										className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										placeholder="0"
 										value={course.price}
 										onChange={(e) =>
@@ -299,7 +329,7 @@ export default function EditCoursePage() {
 						</section>
 
 						{/* Modules */}
-						<section className="bg-white rounded-xl border shadow-sm p-5">
+						<section className="bg-white rounded-xl border p-5">
 							<div className="flex items-center justify-between mb-3">
 								<h2 className="text-sm font-semibold">Modules</h2>
 							</div>
@@ -444,7 +474,7 @@ export default function EditCoursePage() {
 								})}
 
 								<button
-									className="w-full mt-2 border-dashed border rounded-md px-3 py-2 text-xs text-neutral-600 hover:bg-neutral-50"
+									className="w-full mt-2 border-dashed border-2 rounded-lg px-3 py-2.5 text-xs text-neutral-600 hover:bg-neutral-50 hover:border-neutral-400 transition-colors"
 									onClick={() =>
 										updateCourse((c) => {
 											const newId = `module_${Date.now()}`;
@@ -464,7 +494,7 @@ export default function EditCoursePage() {
 					</div>
 
 					{/* Panel kanan: Edit Halaman Materi */}
-					<section className="lg:col-span-2 bg-white rounded-xl border shadow-sm p-5 min-h-[400px]" data-aos="fade-left" data-aos-duration="600" data-aos-delay="100">
+					<section className="lg:col-span-2 bg-white rounded-xl border p-5 min-h-[400px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
 						<div className="flex items-center justify-between mb-4">
 							<div>
 								<h2 className="text-sm font-semibold">Edit Halaman Materi</h2>
@@ -477,11 +507,11 @@ export default function EditCoursePage() {
 						{selectedModule && selectedItem ? (
 							<div className="space-y-4 text-sm">
 								<div>
-									<label className="block text-xs font-medium mb-1">
+									<label className="block text-xs font-medium text-neutral-700 mb-1">
 										Judul Halaman
 									</label>
 									<input
-										className="w-full border rounded-md px-3 py-2 text-sm"
+										className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										value={selectedItem.title}
 										onChange={(e) => {
 											const value = e.target.value;
@@ -504,9 +534,9 @@ export default function EditCoursePage() {
 								</div>
 
 								<div>
-									<label className="block text-xs font-medium mb-1">Konten</label>
+									<label className="block text-xs font-medium text-neutral-700 mb-1">Konten</label>
 									<textarea
-										className="w-full border rounded-md px-3 py-2 text-sm min-h-[160px]"
+										className="w-full border rounded-lg px-3 py-2 text-sm min-h-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 										placeholder="Tulis konten materi di sini..."
 										value={selectedItem.content}
 										onChange={(e) => {
@@ -531,11 +561,11 @@ export default function EditCoursePage() {
 
 								<div className="grid md:grid-cols-2 gap-4">
 									<div>
-										<label className="block text-xs font-medium mb-1">
+										<label className="block text-xs font-medium text-neutral-700 mb-1">
 											URL Gambar / Thumbnail (opsional)
 										</label>
 										<input
-											className="w-full border rounded-md px-3 py-2 text-sm"
+											className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 											placeholder="https://..."
 											value={selectedItem.mediaUrl || ""}
 											onChange={(e) => {
@@ -559,11 +589,11 @@ export default function EditCoursePage() {
 									</div>
 
 									<div>
-										<label className="block text-xs font-medium mb-1">
+										<label className="block text-xs font-medium text-neutral-700 mb-1">
 											URL Video (opsional)
 										</label>
 										<input
-											className="w-full border rounded-md px-3 py-2 text-sm"
+											className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 											placeholder="https://youtube.com/... atau embed URL"
 											value={selectedItem.videoUrl || ""}
 											onChange={(e) => {
@@ -589,8 +619,10 @@ export default function EditCoursePage() {
 							</div>
 						) : (
 							<div className="flex flex-col items-center justify-center h-64 text-center">
-								<div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-2xl mb-4">
-									📝
+								<div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
+									<svg className="w-8 h-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+									</svg>
 								</div>
 								<p className="text-sm text-neutral-500">
 									Pilih module dan halaman materi untuk mulai mengedit.
@@ -614,8 +646,10 @@ export default function EditCoursePage() {
 						</DialogTitle>
 					</DialogHeader>
 					<div className="py-4">
-						<div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center text-3xl">
-							✅
+						<div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+							<svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+							</svg>
 						</div>
 						<p className="text-sm text-neutral-600 text-center">
 							Kursus <strong>{course.title}</strong> telah berhasil diperbarui.
@@ -624,13 +658,13 @@ export default function EditCoursePage() {
 					<div className="flex justify-center gap-3">
 						<button
 							onClick={() => setSuccessDialogOpen(false)}
-							className="px-4 py-2 text-sm rounded-md border text-neutral-700 hover:bg-neutral-100"
+							className="px-4 py-2 text-sm rounded-lg border text-neutral-700 hover:bg-neutral-100 transition-colors"
 						>
 							Lanjut Mengedit
 						</button>
 						<button
 							onClick={handleSuccessClose}
-							className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+							className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
 						>
 							Ke Management Courses
 						</button>

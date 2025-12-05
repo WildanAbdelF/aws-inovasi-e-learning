@@ -2,27 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUser, getPurchases, PurchasedCourse } from "@/lib/localStorageHelper";
+import Link from "next/link";
+import { getUser, getPurchases, PurchasedCourse, StoredUser } from "@/lib/localStorageHelper";
 import { dummyCourses } from "@/lib/data";
 
 export default function DashboardPage() {
 	const router = useRouter();
-	const [name, setName] = useState<string | null>(null);
+	const [user, setUser] = useState<StoredUser | null>(null);
 	const [myCourses, setMyCourses] = useState<PurchasedCourse[]>([]);
 
 	useEffect(() => {
-		const user = getUser();
-		if (!user) {
+		const storedUser = getUser();
+		if (!storedUser) {
 			router.push("/login");
 			return;
 		}
-		setName(user.name || user.email);
+		setUser(storedUser);
 		setMyCourses(getPurchases());
 	}, [router]);
 
-	if (!name) {
+	if (!user) {
 		return null;
 	}
+
+	const name = user.name || user.email;
 
 	const getFirstLessonPath = (courseId: string) => {
 		const courseData = dummyCourses.find((course) => course.id === courseId);
@@ -44,7 +47,25 @@ export default function DashboardPage() {
 			data-aos="fade-up"
 			data-aos-duration="600"
 		>
-			<h1 className="text-3xl font-extrabold mb-6">Selamat Datang, {name}!</h1>
+			{/* Header with profile link */}
+			<div className="flex items-center justify-between mb-6">
+				<h1 className="text-3xl font-extrabold">Selamat Datang, {name}!</h1>
+				<Link
+					href="/settings"
+					className="flex items-center gap-3 px-4 py-2 bg-white border rounded-lg hover:bg-neutral-50 transition-colors"
+				>
+					<div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center text-sm font-semibold text-white">
+						{name.charAt(0).toUpperCase()}
+					</div>
+					<div className="text-left">
+						<p className="text-sm font-medium text-neutral-900">{name}</p>
+						<p className="text-xs text-neutral-500">Pengaturan Akun</p>
+					</div>
+					<svg className="w-5 h-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+					</svg>
+				</Link>
+			</div>
 
 			<div className="flex gap-6 border-b mb-6 text-sm">
 				<button className="pb-3 border-b-2 border-blue-600 text-blue-600 font-medium">

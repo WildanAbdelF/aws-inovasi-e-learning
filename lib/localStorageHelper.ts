@@ -45,6 +45,16 @@ export function findRegisteredUser(email: string): StoredUser | null {
 	return users.find((u) => u.email === email) || null;
 }
 
+export function updateRegisteredUser(email: string, updatedData: Partial<StoredUser>): boolean {
+	if (!isBrowser()) return false;
+	const users = getRegisteredUsers();
+	const index = users.findIndex((u) => u.email === email);
+	if (index === -1) return false;
+	users[index] = { ...users[index], ...updatedData };
+	window.localStorage.setItem(LS_KEYS.REGISTERED_USERS, JSON.stringify(users));
+	return true;
+}
+
 // === CURRENT SESSION (Cleared on logout) ===
 
 export function saveUser(user: StoredUser) {
