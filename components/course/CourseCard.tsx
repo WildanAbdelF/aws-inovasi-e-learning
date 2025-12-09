@@ -1,18 +1,23 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Course } from "@/types/course";
-import { getPurchases } from "@/lib/localStorageHelper";
+import { getPurchases, getSubscriptionByCourseId } from "@/lib/localStorageHelper";
+import type { CourseSubscription } from "@/lib/localStorageHelper";
 import { useEffect, useState } from "react";
 
 export default function CourseCard({ course }: { course: Course }) {
   const [purchased, setPurchased] = useState(false);
+  const [subscription, setSubscription] = useState<CourseSubscription | null>(null);
 
   useEffect(() => {
     try {
       const list = getPurchases();
       setPurchased(list.some((c) => c.id === String(course.id)));
+      const activeSubscription = getSubscriptionByCourseId(String(course.id));
+      setSubscription(activeSubscription);
     } catch {
       setPurchased(false);
+      setSubscription(null);
     }
   }, [course.id]);
 
@@ -22,6 +27,11 @@ export default function CourseCard({ course }: { course: Course }) {
         {purchased && (
           <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white text-[10px] font-semibold px-2 py-1 shadow-sm">
             Sudah dibeli
+          </span>
+        )}
+        {subscription && (
+          <span className="absolute top-2 right-2 z-10 rounded-full bg-blue-600 text-white text-[10px] font-semibold px-2 py-1 shadow-sm">
+            Langganan 1 Bulan
           </span>
         )}
 
@@ -36,6 +46,11 @@ export default function CourseCard({ course }: { course: Course }) {
           <p className="text-red-600 font-bold mt-2">
             Rp {course.price.toLocaleString("id-ID")}
           </p>
+          {subscription && (
+            <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+              Kursus tersedia selama 1 bulan
+            </p>
+          )}
         </CardContent>
       </Card>
     </Link>

@@ -3,13 +3,21 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser, getPurchases, PurchasedCourse, StoredUser } from "@/lib/localStorageHelper";
+import { getUser, getPurchases, getSubscriptions, StoredUser } from "@/lib/localStorageHelper";
 import { dummyCourses } from "@/lib/data/courses.data";
+
+type DashboardCourse = {
+	id: string;
+	title: string;
+	price: number | null;
+	accessType: "lifetime" | "subscription";
+	expiresAt?: string | null;
+};
 
 export default function DashboardPage() {
 	const router = useRouter();
 	const [user, setUser] = useState<StoredUser | null>(null);
-	const [myCourses, setMyCourses] = useState<PurchasedCourse[]>([]);
+	const [myCourses, setMyCourses] = useState<DashboardCourse[]>([]);
 
 	useEffect(() => {
 		const storedUser = getUser();
@@ -18,14 +26,52 @@ export default function DashboardPage() {
 			return;
 		}
 		setUser(storedUser);
-		setMyCourses(getPurchases());
+		setMyCourses(buildAccessibleCourses());
 	}, [router]);
+
+	const buildAccessibleCourses = (): DashboardCourse[] => {
+		const purchases = getPurchases().map((course) => ({
+			id: course.id,
+			title: course.title,
+			price: course.price,
+			accessType: "lifetime" as const,
+			expiresAt: null,
+		}));
+		const subscriptions = getSubscriptions().map((sub) => ({
+			id: sub.courseId,
+			title: sub.title,
+			price: null,
+			accessType: "subscription" as const,
+			expiresAt: sub.expiresAt,
+		}));
+
+		const map = new Map<string, DashboardCourse>();
+		purchases.forEach((course) => {
+			map.set(course.id, course);
+		});
+		subscriptions.forEach((sub) => {
+			if (!map.has(sub.id)) {
+				map.set(sub.id, sub);
+			}
+		});
+
+		return Array.from(map.values());
+	};
 
 	if (!user) {
 		return null;
 	}
 
 	const name = user.name || user.email;
+
+	const formatDate = (value?: string | null) => {
+		if (!value) return "30 hari";
+		return new Intl.DateTimeFormat("id-ID", {
+			day: "numeric",
+			month: "long",
+			year: "numeric",
+		}).format(new Date(value));
+	};
 
 	const getFirstLessonPath = (courseId: string) => {
 		const courseData = dummyCourses.find((course) => course.id === courseId);
@@ -77,7 +123,7 @@ export default function DashboardPage() {
 			<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
 				{myCourses.length === 0 && (
 					<div className="col-span-1 sm:col-span-2 xl:col-span-4 text-xs sm:text-sm text-neutral-600">
-						Belum ada kursus yang Anda beli. Beli kursus terlebih dahulu dari katalog.
+						Belum ada kursus atau langganan aktif. Mulai dari katalog untuk menambah akses belajar.
 					</div>
 				)}
 				{myCourses.map((course) => (
@@ -85,18 +131,28 @@ export default function DashboardPage() {
 						key={course.id}
 						className="bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col"
 					>
-						<div className="h-32 bg-gradient-to-r from-orange-400 to-lime-400" />
+						<div className="relative h-32 bg-gradient-to-r from-orange-400 to-lime-400">
+							<span
+								className={`absolute top-3 left-3 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold text-white ${
+									course.accessType === "lifetime" ? "bg-emerald-600" : "bg-blue-600"
+								}`}
+							>
+								{course.accessType === "lifetime" ? "Lifetime" : "Langganan 1 Bulan"}
+							</span>
+						</div>
 						<div className="p-4 flex-1 flex flex-col">
 							<h3 className="font-semibold mb-1 line-clamp-2">{course.title}</h3>
 							<p className="text-xs text-neutral-500 mb-3">
-								Akses Lifetime — Rp {course.price.toLocaleString("id-ID")}
+								{course.accessType === "lifetime"
+									? `Akses Lifetime — Rp ${course.price?.toLocaleString("id-ID")}`
+									: `Langganan aktif hingga ${formatDate(course.expiresAt)}`}
 							</p>
 							<button
 								onClick={() => handleContinue(course.id)}
 								className="mt-auto bg-blue-700 text-white text-sm py-2 rounded-lg disabled:bg-neutral-300"
 								disabled={!getFirstLessonPath(course.id)}
 							>
-								Lanjutkan Belajar
+								{course.accessType === "subscription" ? "Masuk ke Modul" : "Lanjutkan Belajar"}
 							</button>
 						</div>
 					</div>

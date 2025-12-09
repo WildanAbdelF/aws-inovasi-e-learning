@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { dummyCourses } from "@/lib/data/courses.data";
-import { getPurchases } from "@/lib/localStorageHelper";
+import { getPurchases, getSubscriptionByCourseId } from "@/lib/localStorageHelper";
 
 type ProgressMap = Record<string, string[]>;
 
@@ -26,7 +26,9 @@ export default function LearnDetailPage() {
 	useEffect(() => {
 		if (!course) return;
 		const purchases = getPurchases();
-		const hasAccess = purchases.some((p) => p.id === course.id);
+		const hasLifetime = purchases.some((p) => p.id === course.id);
+		const hasSubscription = Boolean(getSubscriptionByCourseId(course.id));
+		const hasAccess = hasLifetime || hasSubscription;
 		if (!hasAccess) {
 			router.replace("/dashboard");
 			return;
