@@ -48,35 +48,35 @@ export default function DashboardPage() {
 			data-aos-duration="600"
 		>
 			{/* Header with profile link */}
-			<div className="flex items-center justify-between mb-6">
-				<h1 className="text-3xl font-extrabold">Selamat Datang, {name}!</h1>
+			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+				<h1 className="text-2xl sm:text-3xl font-extrabold">Selamat Datang, {name}!</h1>
 				<Link
 					href="/settings"
-					className="flex items-center gap-3 px-4 py-2 bg-white border rounded-lg hover:bg-neutral-50 transition-colors"
+					className="w-full sm:w-auto flex items-center gap-3 px-4 py-2 bg-white border rounded-lg hover:bg-neutral-50 transition-colors"
 				>
-					<div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center text-sm font-semibold text-white">
+					<div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center text-sm font-semibold text-white flex-shrink-0">
 						{name.charAt(0).toUpperCase()}
 					</div>
-					<div className="text-left">
-						<p className="text-sm font-medium text-neutral-900">{name}</p>
+					<div className="text-left min-w-0">
+						<p className="text-sm font-medium text-neutral-900 truncate">{name}</p>
 						<p className="text-xs text-neutral-500">Pengaturan Akun</p>
 					</div>
-					<svg className="w-5 h-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<svg className="w-5 h-5 text-neutral-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
 					</svg>
 				</Link>
 			</div>
 
-			<div className="flex gap-6 border-b mb-6 text-sm">
-				<button className="pb-3 border-b-2 border-blue-600 text-blue-600 font-medium">
+			<div className="flex gap-4 sm:gap-6 border-b mb-6 text-xs sm:text-sm overflow-x-auto">
+				<button className="pb-3 border-b-2 border-blue-600 text-blue-600 font-medium whitespace-nowrap">
 					Kursus Aktif
 				</button>
-				<button className="pb-3 text-neutral-500">Sertifikat Saya</button>
+				<button className="pb-3 text-neutral-500 whitespace-nowrap">Sertifikat Saya</button>
 			</div>
 
-			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+			<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
 				{myCourses.length === 0 && (
-					<div className="md:col-span-2 xl:col-span-4 text-sm text-neutral-600">
+					<div className="col-span-1 sm:col-span-2 xl:col-span-4 text-xs sm:text-sm text-neutral-600">
 						Belum ada kursus yang Anda beli. Beli kursus terlebih dahulu dari katalog.
 					</div>
 				)}

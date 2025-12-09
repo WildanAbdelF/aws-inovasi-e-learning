@@ -112,10 +112,10 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <div className="max-w-4xl mx-auto px-6 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {/* Header */}
         <h1
-          className="text-2xl font-bold text-neutral-900 mb-6"
+          className="text-xl sm:text-2xl font-bold text-neutral-900 mb-6"
           data-aos="fade-down"
           data-aos-duration="500"
         >
@@ -124,7 +124,7 @@ export default function SettingsPage() {
 
         {/* Tabs */}
         <div
-          className="flex gap-6 border-b mb-8"
+          className="flex gap-2 sm:gap-6 border-b mb-6 sm:mb-8 overflow-x-auto"
           data-aos="fade-up"
           data-aos-duration="500"
         >
@@ -132,7 +132,7 @@ export default function SettingsPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`pb-3 text-sm font-medium transition-colors ${
+              className={`pb-3 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab.key
                   ? "text-blue-600 border-b-2 border-blue-600"
                   : "text-neutral-500 hover:text-neutral-800"
@@ -145,18 +145,18 @@ export default function SettingsPage() {
 
         {/* Tab Content */}
         <div
-          className="bg-white rounded-xl border p-6"
+          className="bg-white rounded-xl border p-4 sm:p-6"
           data-aos="fade-up"
           data-aos-duration="500"
           data-aos-delay="100"
         >
           {activeTab === "profil" && (
             <div>
-              <h2 className="text-lg font-semibold text-neutral-900 mb-6">Profil</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-neutral-900 mb-6">Profil</h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-neutral-700 mb-2">
                     Nama Lengkap
                   </label>
                   <Input
@@ -164,28 +164,28 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
-                    className="bg-slate-100 border-slate-200"
+                    className="bg-slate-100 border-slate-200 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-neutral-700 mb-2">
                     Alamat Email
                   </label>
                   <Input
                     value={formData.email}
                     disabled
-                    className="bg-slate-100 border-slate-200 text-neutral-500"
+                    className="bg-slate-100 border-slate-200 text-neutral-500 text-sm"
                   />
                 </div>
               </div>
 
-              <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-neutral-900 mb-4">
                 Ganti Kata Sandi
               </h3>
 
               <div className="space-y-4 mb-6">
-                <div className="md:w-1/2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <div className="w-full sm:w-1/2">
+                  <label className="block text-xs sm:text-sm font-medium text-neutral-700 mb-2">
                     Kata Sandi Saat Ini
                   </label>
                   <div className="relative">
@@ -218,9 +218,9 @@ export default function SettingsPage() {
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-neutral-700 mb-2">
                       Kata Sandi Baru
                     </label>
                     <div className="relative">
@@ -290,10 +290,10 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between gap-4">
+              <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <Button
                   onClick={handleSaveProfile}
-                  className="bg-blue-900 hover:bg-blue-950"
+                  className="bg-blue-900 hover:bg-blue-950 w-full sm:w-auto"
                 >
                   Simpan Perubahan
                 </Button>
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                     logout();
                     router.push("/");
                   }}
-                  className="bg-red-600 hover:bg-red-700"
+                  className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
                 >
                   Logout
                 </Button>
