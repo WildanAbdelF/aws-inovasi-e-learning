@@ -7,6 +7,7 @@ import { dummyCourses } from "@/lib/data/courses.data";
 import { addPurchase, getPurchases } from "@/lib/localStorageHelper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInView } from "@/lib/hooks";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export type CourseDetailClientProps = {
   course: (typeof dummyCourses)[number];
@@ -17,6 +18,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
   const [showSuccess, setShowSuccess] = useState(false);
   const [alreadyPurchased, setAlreadyPurchased] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
 
   const { ref: mainRef, inView: mainInView } = useInView({ threshold: 0.15 });
   const { ref: asideRef, inView: asideInView } = useInView({ threshold: 0.2 });
@@ -38,6 +40,15 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
     if (path) {
       router.push(path);
     }
+  };
+
+  const handleBuyClick = () => {
+    if (!user) {
+      window.alert("Anda harus login terlebih dahulu untuk membeli kursus ini.");
+      router.push("/login");
+      return;
+    }
+    setOpen(true);
   };
 
   const handleConfirmPurchase = () => {
@@ -127,7 +138,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
               ) : (
                 <button
                   className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
-                  onClick={() => setOpen(true)}
+                  onClick={handleBuyClick}
                 >
                   Beli Lifetime
                 </button>
