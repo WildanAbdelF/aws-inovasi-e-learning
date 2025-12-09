@@ -139,6 +139,13 @@
   }
 }
 
+@media (max-width: 640px) {
+  [data-aos] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 /* Utility classes for fonts */
 @layer utilities {
   .font-poppins {

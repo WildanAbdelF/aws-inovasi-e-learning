@@ -7,7 +7,20 @@ export function useInView(options?: IntersectionObserverInit) {
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
-    if (!ref.current) return;
+    const node = ref.current;
+    if (!node) return;
+
+    const disableAnimation =
+      typeof window !== "undefined" ? window.innerWidth <= 1024 : false;
+
+    if (
+      typeof window === "undefined" ||
+      !("IntersectionObserver" in window) ||
+      disableAnimation
+    ) {
+      setInView(true);
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -16,8 +29,11 @@ export function useInView(options?: IntersectionObserverInit) {
       options ?? { threshold: 0.2 }
     );
 
-    observer.observe(ref.current);
-    return () => observer.disconnect();
+    observer.observe(node);
+    return () => {
+      observer.unobserve(node);
+      observer.disconnect();
+    };
   }, [options]);
 
   return { ref, inView };
