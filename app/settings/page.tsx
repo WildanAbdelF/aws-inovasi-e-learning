@@ -6,11 +6,13 @@ import Link from "next/link";
 import { getUser, saveUser, findRegisteredUser, updateRegisteredUser, StoredUser, getPurchases } from "@/lib/localStorageHelper";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 type TabType = "profil" | "langganan" | "lifetime" | "riwayat" | "sertifikat";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<StoredUser | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("profil");
@@ -288,12 +290,21 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-between gap-4">
                 <Button
                   onClick={handleSaveProfile}
                   className="bg-blue-900 hover:bg-blue-950"
                 >
                   Simpan Perubahan
+                </Button>
+                <Button
+                  onClick={() => {
+                    logout();
+                    router.push("/");
+                  }}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Logout
                 </Button>
               </div>
             </div>

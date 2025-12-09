@@ -129,16 +129,6 @@ export default function Navbar() {
                   {userName}
                 </span>
               </button>
-              
-              <button
-                onClick={() => {
-                  logout();
-                  router.push("/");
-                }}
-                className="text-xs text-neutral-500 hover:text-neutral-800 ml-1"
-              >
-                Logout
-              </button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -193,16 +183,6 @@ export default function Navbar() {
                 className="text-left text-neutral-700 hover:text-neutral-900"
               >
                 {user?.role === "admin" ? "Admin Dashboard" : "Pengaturan Akun"}
-              </button>
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  logout();
-                  router.push("/");
-                }}
-                className="text-left text-neutral-500 hover:text-neutral-800"
-              >
-                Logout
               </button>
             </>
           ) : (
