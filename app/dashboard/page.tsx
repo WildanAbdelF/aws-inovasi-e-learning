@@ -129,7 +129,7 @@ export default function DashboardPage() {
 				{myCourses.map((course) => (
 					<div
 						key={course.id}
-						className="bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col"
+						className="bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col transition-transform duration-200 hover:scale-[1.02]"
 					>
 						<div className="relative h-32 bg-gradient-to-r from-orange-400 to-lime-400">
 							<span
@@ -149,10 +149,10 @@ export default function DashboardPage() {
 							</p>
 							<button
 								onClick={() => handleContinue(course.id)}
-								className="mt-auto bg-blue-700 text-white text-sm py-2 rounded-lg disabled:bg-neutral-300"
+								className="mt-auto bg-white text-blue-700 text-sm py-2 rounded-sm disabled:bg-neutral-300 transition-all duration-200 hover:bg-blue-800 hover:text-white hover:scale-[1.02] hover:cursor-pointer outline outline-blue-700"
 								disabled={!getFirstLessonPath(course.id)}
 							>
-								{course.accessType === "subscription" ? "Masuk ke Modul" : "Lanjutkan Belajar"}
+							Lanjutkan Belajar
 							</button>
 						</div>
 					</div>

@@ -226,7 +226,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
             <div className="flex flex-col gap-3">
               {alreadyPurchased && (
                 <button
-                  className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
+                  className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-semibold transition hover:scale-102"
                   onClick={handleContinueLearning}
                 >
                   Lanjutkan Pembelajaran
@@ -236,22 +236,20 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
               {!alreadyPurchased && hasMonthlyAccess && (
                 <>
                   <button
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:scale-102 transition"
                     onClick={handleContinueLearning}
                   >
-                    <span className="font-semibold block">Masuk ke Modul Pembelajaran</span>
-                    <span className="text-[11px] text-blue-100 font-normal">
-                      Langganan aktif sampai {subscriptionExpiryText}
-                    </span>
+                    <span className="font-semibold block">Lanjutkan Pembelajaran</span>
+      
                   </button>
                   <button
-                    className="w-full bg-red-50 border border-red-200 text-red-700 py-3 rounded-lg hover:bg-red-100"
+                    className="w-full font-semibold block border outline border-red-600 text-red-600 py-3 rounded-lg hover:bg-red-600 hover:text-white hover:scale-102 transition"
                     onClick={handleBuyClick}
                   >
                     Upgrade ke Akses Lifetime
                   </button>
                   <button
-                    className="self-start text-xs text-blue-600 underline decoration-dashed underline-offset-4"
+                    className="self-start text-xs text-blue-600 underline underline-offset-4"
                     onClick={handleSubscriptionClick}
                   >
                     Perpanjang Langganan 1 Bulan
@@ -262,19 +260,17 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
               {!alreadyPurchased && !hasMonthlyAccess && (
                 <>
                   <button
-                    className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
+                    className="w-full bg-red-600 font-semibold text-white py-3 rounded-lg hover:bg-red-700 hover:scale-102 transition"
                     onClick={handleBuyClick}
                   >
                     Beli Lifetime
                   </button>
                   <button
-                    className="w-full border border-blue-600 text-blue-600 py-3 rounded-lg hover:bg-blue-50 transition"
+                    className="w-full border border-blue-600 text-blue-600 py-3 rounded-lg hover:bg-blue-600 hover:text-white hover:scale-102 transition"
                     onClick={handleSubscriptionClick}
                   >
-                    <span className="font-semibold block">Gabung Langganan 1 Bulan</span>
-                    <span className="text-xs text-neutral-500">
-                      Rp {monthlyPrice.toLocaleString("id-ID")} / 30 hari
-                    </span>
+                    <span className="font-semibold block">Gabung Langganan 1 Bulan <br /> </span>
+                    Rp {monthlyPrice.toLocaleString("id-ID")} / 30 hari 
                   </button>
                 </>
               )}
