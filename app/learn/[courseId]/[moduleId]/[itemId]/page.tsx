@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { dummyCourses } from "@/lib/data/courses.data";
-import { getPurchases, getSubscriptionByCourseId } from "@/lib/localStorageHelper";
+import { getPurchases, getSubscriptionByCourseId, getUser } from "@/lib/localStorageHelper";
 import type { QuizQuestion } from "@/types/course";
 
 type ProgressMap = Record<string, string[]>;
 
-const PROGRESS_KEY = "lms_dummy_course_progress";
+// Progress key is now per-user
+const getProgressKey = (userEmail: string) => `lms_course_progress_${userEmail}`;
 
 export default function LearnDetailPage() {
 	const router = useRouter();
@@ -19,7 +20,9 @@ export default function LearnDetailPage() {
 	const course = dummyCourses.find((c) => c.id === courseId);
 	const modules = course?.modules ?? [];
 	const [progress, setProgress] = useState<string[]>([]);
+	const [progressLoaded, setProgressLoaded] = useState(false);
 	const [isAuthorized, setIsAuthorized] = useState(false);
+	const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
 	const currentModule = modules.find((module) => module.id === moduleId);
 	const currentItem = currentModule?.items.find((item) => item.id === itemId);
@@ -37,6 +40,12 @@ export default function LearnDetailPage() {
 
 	useEffect(() => {
 		if (!course) return;
+		const user = getUser();
+		if (!user) {
+			router.replace("/login");
+			return;
+		}
+		setCurrentUserEmail(user.email);
 		const purchases = getPurchases();
 		const hasLifetime = purchases.some((p) => p.id === course.id);
 		const hasSubscription = Boolean(getSubscriptionByCourseId(course.id));
@@ -49,8 +58,9 @@ export default function LearnDetailPage() {
 	}, [course, router]);
 
 	useEffect(() => {
-		if (!isAuthorized || !course) return;
-		const raw = window.localStorage.getItem(PROGRESS_KEY);
+		if (!isAuthorized || !course || !currentUserEmail) return;
+		const progressKey = getProgressKey(currentUserEmail);
+		const raw = window.localStorage.getItem(progressKey);
 		let parsed: ProgressMap = {};
 		if (raw) {
 			try {
@@ -63,12 +73,13 @@ export default function LearnDetailPage() {
 		if (!list.includes(itemId)) {
 			const updated = [...list, itemId];
 			parsed[course.id] = updated;
-			window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
+			window.localStorage.setItem(progressKey, JSON.stringify(parsed));
 			setProgress(updated);
 		} else {
 			setProgress(list);
 		}
-	}, [isAuthorized, course, itemId]);
+		setProgressLoaded(true);
+	}, [isAuthorized, course, itemId, currentUserEmail]);
 
 	const flattenedLessons = useMemo(() => {
 		return modules.flatMap((module) =>
@@ -94,6 +105,23 @@ export default function LearnDetailPage() {
 			? flattenedLessons[currentIndex + 1]
 			: null;
 
+	// Check if a specific item is unlocked (previous item must be completed)
+	const isItemUnlocked = (targetItemId: string): boolean => {
+		const targetIndex = flattenedLessons.findIndex((entry) => entry.itemId === targetItemId);
+		// First item is always unlocked
+		if (targetIndex === 0) return true;
+		// Check if all previous items are completed
+		for (let i = 0; i < targetIndex; i++) {
+			if (!progress.includes(flattenedLessons[i].itemId)) {
+				return false;
+			}
+		}
+		return true;
+	};
+
+	// Check if current item is accessible
+	const isCurrentItemUnlocked = isItemUnlocked(itemId);
+
 	if (!course) {
 		return <div className="max-w-4xl mx-auto py-10 px-6">Course tidak ditemukan.</div>;
 	}
@@ -106,9 +134,56 @@ export default function LearnDetailPage() {
 		);
 	}
 
+	// Wait for progress to be loaded before checking unlock status
+	if (!progressLoaded) {
+		return (
+			<div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+				<div className="text-center">
+					<div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+					<p className="text-neutral-500">Memuat konten...</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Show locked message if content is not accessible
+	if (!isCurrentItemUnlocked) {
+		const firstIncompleteIndex = flattenedLessons.findIndex(
+			(entry) => !progress.includes(entry.itemId)
+		);
+		const nextToComplete = firstIncompleteIndex >= 0 ? flattenedLessons[firstIncompleteIndex] : null;
+
+		return (
+			<div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+				<div className="max-w-md mx-auto text-center p-8">
+					<div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100 flex items-center justify-center">
+						<svg className="w-10 h-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+						</svg>
+					</div>
+					<h2 className="text-2xl font-bold text-neutral-900 mb-3">Konten Terkunci</h2>
+					<p className="text-neutral-600 mb-6">
+						Anda harus menyelesaikan materi sebelumnya terlebih dahulu untuk membuka akses ke konten ini.
+					</p>
+					{nextToComplete && (
+						<button
+							onClick={() => router.push(`/learn/${course.id}/${nextToComplete.moduleId}/${nextToComplete.itemId}`)}
+							className="px-6 py-3 bg-rose-600 text-white rounded-full text-sm font-semibold hover:bg-rose-700 transition-colors"
+						>
+							Lanjutkan ke: {nextToComplete.itemTitle}
+						</button>
+					)}
+				</div>
+			</div>
+		);
+	}
+
 	const handleNavigate = (target?: typeof flattenedLessons[number] | null) => {
 		if (!target) return;
-		router.push(`/learn/${course.id}/${target.moduleId}/${target.itemId}`);
+		// Only navigate if target is unlocked
+		if (isItemUnlocked(target.itemId)) {
+			router.push(`/learn/${course.id}/${target.moduleId}/${target.itemId}`);
+		}
 	};
 
 	const renderMedia = () => {
@@ -315,107 +390,12 @@ export default function LearnDetailPage() {
 		);
 	};
 
-	// Render sidebar for quiz view
-	const renderQuizSidebar = () => (
-		<aside
-			className={`bg-white border-r shadow-sm transition-all duration-300 overflow-hidden flex-shrink-0 ${
-				sidebarOpen ? "w-72 p-5" : "w-0 p-0"
-			}`}
-		>
-			<div className={`transition-opacity duration-200 ${sidebarOpen ? "opacity-100" : "opacity-0"}`}>
-				<p className="text-sm text-neutral-500 mb-2">{course.title}</p>
-				<h2 className="text-lg font-bold mb-4">Progress Keseluruhan</h2>
-				<div className="mb-6">
-					<div className="flex justify-between text-xs text-neutral-500 mb-2">
-						<span>{progressPercent}%</span>
-						<span>
-							{completedLessons}/{totalLessons} pelajaran
-						</span>
-					</div>
-					<div className="h-2 rounded-full bg-neutral-200">
-						<div
-							className="h-full rounded-full bg-rose-500 transition-all"
-							style={{ width: `${progressPercent}%` }}
-						/>
-					</div>
-				</div>
-				<div className="space-y-4">
-					{modules.map((module) => (
-						<div key={module.id}>
-							<p className="text-sm font-semibold text-neutral-800 mb-2">
-								{module.title}
-							</p>
-							<div className="space-y-1">
-								{module.items.map((item) => {
-									const isActive = item.id === currentItem.id;
-									const isCompleted = progress.includes(item.id);
-									return (
-										<button
-											key={item.id}
-											onClick={() => handleNavigate({
-												moduleId: module.id,
-												moduleTitle: module.title,
-												itemId: item.id,
-												itemTitle: item.title,
-											})}
-											className={`w-full text-left text-xs px-3 py-2 rounded-lg border transition flex items-center gap-2 ${
-												isActive
-													? "border-rose-500 bg-rose-50 text-rose-600"
-													: "border-transparent bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-											}`}
-										>
-											{item.type === "quiz" ? (
-												<span className="text-amber-500">📝</span>
-											) : (
-												<span className="text-blue-500">📄</span>
-											)}
-											<span className="flex-1 truncate">{item.title}</span>
-											{isCompleted && (
-												<span className="text-green-600 text-xs">✓</span>
-											)}
-										</button>
-									);
-								})}
-							</div>
-						</div>
-					))}
-				</div>
-			</div>
-		</aside>
-	);
-
 	return (
 		<div className="min-h-screen bg-neutral-50">
 			{isQuizItem ? (
-				/* ========== QUIZ VIEW WITH COLLAPSIBLE SIDEBAR ========== */
-				<div className="flex min-h-screen">
-					{/* Sidebar Toggle Button - Bottom Left */}
-					<button
-						onClick={() => setSidebarOpen(!sidebarOpen)}
-						className="fixed bottom-6 left-6 z-50 flex items-center gap-2 px-4 py-3 bg-white border rounded-full shadow-lg hover:bg-neutral-50 transition-colors"
-						title={sidebarOpen ? "Sembunyikan Sidebar" : "Tampilkan Sidebar"}
-					>
-						{sidebarOpen ? (
-							<svg className="w-5 h-5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-							</svg>
-						) : (
-							<svg className="w-5 h-5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-							</svg>
-						)}
-						<span className="text-sm font-medium text-neutral-700">
-							{sidebarOpen ? "Sembunyikan" : "Modul"}
-						</span>
-					</button>
-
-					{/* Collapsible Sidebar */}
-					{renderQuizSidebar()}
-
-					{/* Quiz Content */}
-					<div className="flex-1 py-10 px-4">
-						{renderQuiz()}
-					</div>
+				/* ========== QUIZ VIEW - NO SIDEBAR ========== */
+				<div className="max-w-4xl mx-auto py-10 px-4">
+					{renderQuiz()}
 				</div>
 			) : (
 				/* ========== REGULAR LESSON VIEW WITH COLLAPSIBLE SIDEBAR ========== */
@@ -473,22 +453,32 @@ export default function LearnDetailPage() {
 											{module.items.map((item) => {
 												const isActive = item.id === currentItem.id;
 												const isCompleted = progress.includes(item.id);
+												const isUnlocked = isItemUnlocked(item.id);
 												return (
 													<button
 														key={item.id}
-														onClick={() => handleNavigate({
-															moduleId: module.id,
-															moduleTitle: module.title,
-															itemId: item.id,
-															itemTitle: item.title,
-														})}
+														onClick={() => {
+															if (isUnlocked) {
+																handleNavigate({
+																	moduleId: module.id,
+																	moduleTitle: module.title,
+																	itemId: item.id,
+																	itemTitle: item.title,
+																});
+															}
+														}}
+														disabled={!isUnlocked}
 														className={`w-full text-left text-xs px-3 py-2 rounded-lg border transition flex items-center gap-2 ${
 															isActive
 																? "border-rose-500 bg-rose-50 text-rose-600"
+																: !isUnlocked
+																? "border-transparent bg-neutral-50 text-neutral-400 cursor-not-allowed"
 																: "border-transparent bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
 														}`}
 													>
-														{item.type === "quiz" ? (
+														{!isUnlocked ? (
+															<span className="text-neutral-400">🔒</span>
+														) : item.type === "quiz" ? (
 															<span className="text-amber-500">📝</span>
 														) : (
 															<span className="text-blue-500">📄</span>

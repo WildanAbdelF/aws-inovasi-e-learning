@@ -173,5 +173,28 @@ export function addMonthlySubscription(course: { id: string | number; title: str
 	return subscription;
 }
 
+export function clearSubscriptions() {
+	if (!isBrowser()) return;
+	window.localStorage.removeItem(LS_KEYS.SUBSCRIPTIONS);
+}
 
+// Clear course progress for a specific user
+export function clearUserProgress(userEmail: string) {
+	if (!isBrowser()) return;
+	const progressKey = `lms_course_progress_${userEmail}`;
+	window.localStorage.removeItem(progressKey);
+}
 
+// Clear all session data for logout
+export function logout() {
+	if (!isBrowser()) return;
+	const user = getUser();
+	if (user) {
+		// Clear user's course progress
+		clearUserProgress(user.email);
+	}
+	// Clear session data
+	clearUser();
+	clearPurchases();
+	clearSubscriptions();
+}
