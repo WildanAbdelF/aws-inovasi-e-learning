@@ -116,34 +116,34 @@ export default function CertificateModal({ open, onClose, certificate }: Certifi
 
 	return (
 		<Dialog open={open} onOpenChange={onClose}>
-			<DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] overflow-y-auto">
+			<DialogContent className="!max-w-[85vw] !w-[900px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
 				<DialogHeader>
 					<DialogTitle>Pratinjau Sertifikat</DialogTitle>
 				</DialogHeader>
 
-				{/* Certificate Preview */}
-				<div className="p-4">
+				{/* Certificate Preview - Landscape orientation */}
+				<div className="p-0 sm:p-2">
 					<div
 						ref={certificateRef}
 						style={{
 							backgroundColor: "#ffffff",
 							border: "2px solid #e5e5e5",
 							borderRadius: "8px",
-							padding: "48px",
+							padding: "24px 32px",
 							aspectRatio: "1.414 / 1",
 							display: "flex",
 							flexDirection: "column",
 							alignItems: "center",
 							justifyContent: "center",
 							textAlign: "center",
-							minHeight: "500px",
+							width: "100%",
 						}}
 					>
 						{/* Logo */}
-						<div style={{ marginBottom: "24px" }}>
+						<div style={{ marginBottom: "16px" }}>
 							<svg
-								width="64"
-								height="64"
+								width="48"
+								height="48"
 								viewBox="0 0 24 24"
 								fill="#1e3a5f"
 							>
@@ -153,51 +153,51 @@ export default function CertificateModal({ open, onClose, certificate }: Certifi
 
 						{/* Title */}
 						<h1 style={{
-							fontSize: "28px",
+							fontSize: "22px",
 							fontWeight: "bold",
 							color: "#1e3a5f",
 							letterSpacing: "2px",
-							marginBottom: "16px",
+							marginBottom: "12px",
 						}}>
 							SERTIFIKAT PENYELESAIAN
 						</h1>
 
 						{/* Subtitle */}
-						<p style={{ color: "#525252", marginBottom: "8px", fontSize: "16px" }}>
+						<p style={{ color: "#525252", marginBottom: "6px", fontSize: "14px" }}>
 							Diberikan kepada:
 						</p>
 
 						{/* User Name */}
 						<h2 style={{
-							fontSize: "36px",
+							fontSize: "28px",
 							fontWeight: "bold",
 							color: "#1e40af",
-							marginBottom: "16px",
+							marginBottom: "12px",
 						}}>
 							{certificate.userName.toUpperCase()}
 						</h2>
 
 						{/* Description */}
-						<p style={{ color: "#525252", marginBottom: "8px", fontSize: "16px" }}>
+						<p style={{ color: "#525252", marginBottom: "6px", fontSize: "14px" }}>
 							Atas keberhasilannya telah menyelesaikan kursus
 						</p>
 
 						{/* Course Title */}
 						<h3 style={{
-							fontSize: "20px",
+							fontSize: "16px",
 							fontWeight: "bold",
 							color: "#171717",
-							marginBottom: "24px",
+							marginBottom: "16px",
 						}}>
 							{certificate.courseTitle}
 						</h3>
 
 						{/* Divider */}
 						<div style={{
-							width: "96px",
+							width: "80px",
 							height: "2px",
 							backgroundColor: "#d4d4d4",
-							marginBottom: "32px",
+							marginBottom: "20px",
 						}}></div>
 
 						{/* Footer Info */}
@@ -205,19 +205,19 @@ export default function CertificateModal({ open, onClose, certificate }: Certifi
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "center",
-							gap: "80px",
+							gap: "60px",
 						}}>
 							<div style={{ textAlign: "center" }}>
-								<p style={{ fontWeight: "bold", color: "#262626", fontSize: "16px" }}>
+								<p style={{ fontWeight: "bold", color: "#262626", fontSize: "14px" }}>
 									{certificate.instructorName}
 								</p>
-								<p style={{ fontSize: "14px", color: "#737373" }}>Instruktur</p>
+								<p style={{ fontSize: "12px", color: "#737373" }}>Instruktur</p>
 							</div>
 							<div style={{ textAlign: "center" }}>
-								<p style={{ fontWeight: "bold", color: "#262626", fontSize: "16px" }}>
+								<p style={{ fontWeight: "bold", color: "#262626", fontSize: "14px" }}>
 									{formatDate(certificate.completedAt)}
 								</p>
-								<p style={{ fontSize: "14px", color: "#737373" }}>Tanggal</p>
+								<p style={{ fontSize: "12px", color: "#737373" }}>Tanggal</p>
 							</div>
 						</div>
 					</div>

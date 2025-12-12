@@ -32,6 +32,8 @@ export default function LearnDetailPage() {
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
 	const [quizSubmitted, setQuizSubmitted] = useState(false);
+	const [quizAnimating, setQuizAnimating] = useState(false);
+	const [quizAnimationDirection, setQuizAnimationDirection] = useState<'left' | 'right'>('right');
 
 	// Sidebar toggle state
 	const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -258,14 +260,24 @@ export default function LearnDetailPage() {
 	};
 
 	const handlePrevQuestion = () => {
-		if (currentQuestionIndex > 0) {
-			setCurrentQuestionIndex(currentQuestionIndex - 1);
+		if (currentQuestionIndex > 0 && !quizAnimating) {
+			setQuizAnimationDirection('left');
+			setQuizAnimating(true);
+			setTimeout(() => {
+				setCurrentQuestionIndex(currentQuestionIndex - 1);
+				setTimeout(() => setQuizAnimating(false), 50);
+			}, 200);
 		}
 	};
 
 	const handleNextQuestion = () => {
-		if (currentQuestionIndex < totalQuestions - 1) {
-			setCurrentQuestionIndex(currentQuestionIndex + 1);
+		if (currentQuestionIndex < totalQuestions - 1 && !quizAnimating) {
+			setQuizAnimationDirection('right');
+			setQuizAnimating(true);
+			setTimeout(() => {
+				setCurrentQuestionIndex(currentQuestionIndex + 1);
+				setTimeout(() => setQuizAnimating(false), 50);
+			}, 200);
 		}
 	};
 
@@ -295,8 +307,8 @@ export default function LearnDetailPage() {
 			const passed = percentage >= 70;
 
 			return (
-				<div className="max-w-2xl mx-auto py-10 text-center">
-					<div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${passed ? 'bg-green-100' : 'bg-red-100'}`}>
+				<div className="max-w-2xl mx-auto py-10 text-center animate-fadeIn">
+					<div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center animate-scaleIn ${passed ? 'bg-green-100' : 'bg-red-100'}`}>
 						{passed ? (
 							<svg className="w-12 h-12 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -365,10 +377,33 @@ export default function LearnDetailPage() {
 					<p className="text-neutral-500">
 						Soal {currentQuestionIndex + 1} dari {totalQuestions}
 					</p>
+					{/* Progress dots */}
+					<div className="flex justify-center gap-2 mt-4">
+						{quizQuestions.map((_, idx) => (
+							<div
+								key={idx}
+								className={`w-2 h-2 rounded-full transition-all duration-300 ${
+									idx === currentQuestionIndex
+										? 'w-6 bg-blue-600'
+										: selectedAnswers[quizQuestions[idx].id]
+										? 'bg-blue-400'
+										: 'bg-neutral-300'
+								}`}
+							/>
+						))}
+					</div>
 				</div>
 
-				{/* Question Card */}
-				<div className="bg-white rounded-2xl border shadow-sm p-6 mb-6">
+				{/* Question Card with animation */}
+				<div 
+					className={`bg-white rounded-2xl border shadow-sm p-6 mb-6 transition-all duration-300 ease-out ${
+						quizAnimating 
+							? quizAnimationDirection === 'right' 
+								? 'opacity-0 -translate-x-8' 
+								: 'opacity-0 translate-x-8'
+							: 'opacity-100 translate-x-0'
+					}`}
+				>
 					<h2 className="text-lg font-semibold text-neutral-900 text-center mb-6">
 						{currentQuestion.questionText}
 					</h2>
