@@ -1,3 +1,15 @@
+export interface QuizOption {
+  id: string;
+  text: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  questionText: string;
+  options: QuizOption[];
+  correctOptionId: string;
+}
+
 export interface CourseModuleContent {
   id: string;
   title: string;
@@ -5,6 +17,7 @@ export interface CourseModuleContent {
   content: string;
   mediaUrl?: string;
   videoUrl?: string;
+  quizQuestions?: QuizQuestion[];
 }
 
 export interface CourseModule {

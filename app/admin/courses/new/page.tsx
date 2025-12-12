@@ -16,6 +16,224 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import type { QuizQuestion, QuizOption } from "@/types/course";
+
+// =====================
+// QUIZ EDITOR COMPONENT
+// =====================
+function QuizEditor({
+	selectedItem,
+	selectedModule,
+	updateCourse,
+}: {
+	selectedItem: any;
+	selectedModule: any;
+	updateCourse: (updater: (c: AdminCourse) => AdminCourse) => void;
+}) {
+	const questions: QuizQuestion[] = selectedItem.quizQuestions || [];
+
+	const updateQuizQuestions = (newQuestions: QuizQuestion[]) => {
+		updateCourse((c) => ({
+			...c,
+			modules: c.modules.map((m) => {
+				if (m.id !== selectedModule.id) return m;
+				return {
+					...m,
+					items: m.items.map((it) =>
+						it.id === selectedItem.id
+							? { ...it, quizQuestions: newQuestions }
+							: it
+					),
+				};
+			}),
+		}));
+	};
+
+	const updateItemTitle = (newTitle: string) => {
+		updateCourse((c) => ({
+			...c,
+			modules: c.modules.map((m) => {
+				if (m.id !== selectedModule.id) return m;
+				return {
+					...m,
+					items: m.items.map((it) =>
+						it.id === selectedItem.id ? { ...it, title: newTitle } : it
+					),
+				};
+			}),
+		}));
+	};
+
+	const addQuestion = () => {
+		const newQuestion: QuizQuestion = {
+			id: `q_${Date.now()}`,
+			questionText: "",
+			options: [
+				{ id: `opt_${Date.now()}_1`, text: "" },
+				{ id: `opt_${Date.now()}_2`, text: "" },
+				{ id: `opt_${Date.now()}_3`, text: "" },
+				{ id: `opt_${Date.now()}_4`, text: "" },
+			],
+			correctOptionId: "",
+		};
+		updateQuizQuestions([...questions, newQuestion]);
+	};
+
+	const deleteQuestion = (questionId: string) => {
+		updateQuizQuestions(questions.filter((q) => q.id !== questionId));
+	};
+
+	const updateQuestion = (questionId: string, updates: Partial<QuizQuestion>) => {
+		updateQuizQuestions(
+			questions.map((q) => (q.id === questionId ? { ...q, ...updates } : q))
+		);
+	};
+
+	const updateOption = (questionId: string, optionId: string, newText: string) => {
+		updateQuizQuestions(
+			questions.map((q) => {
+				if (q.id !== questionId) return q;
+				return {
+					...q,
+					options: q.options.map((opt) =>
+						opt.id === optionId ? { ...opt, text: newText } : opt
+					),
+				};
+			})
+		);
+	};
+
+	const setCorrectOption = (questionId: string, optionId: string) => {
+		updateQuestion(questionId, { correctOptionId: optionId });
+	};
+
+	return (
+		<div className="space-y-5 text-sm">
+			{/* Quiz Title */}
+			<div>
+				<label className="block text-xs font-medium text-neutral-700 mb-1">
+					Judul Kuis
+				</label>
+				<input
+					className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					placeholder="Masukkan judul kuis"
+					value={selectedItem.title}
+					onChange={(e) => updateItemTitle(e.target.value)}
+				/>
+			</div>
+
+			{/* Questions */}
+			<div className="space-y-4">
+				{questions.map((question, qIdx) => (
+					<div
+						key={question.id}
+						className="border rounded-lg p-4 bg-neutral-50"
+					>
+						<div className="flex items-start justify-between mb-3">
+							<h4 className="font-semibold text-neutral-800">
+								Pertanyaan {qIdx + 1}
+							</h4>
+							<button
+								onClick={() => deleteQuestion(question.id)}
+								className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+								title="Hapus pertanyaan"
+							>
+								<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+								</svg>
+							</button>
+						</div>
+
+						{/* Question Text */}
+						<div className="mb-4">
+							<label className="block text-xs font-medium text-neutral-600 mb-1">
+								Teks Pertanyaan
+							</label>
+							<input
+								className="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								placeholder="Tulis pertanyaan di sini..."
+								value={question.questionText}
+								onChange={(e) =>
+									updateQuestion(question.id, { questionText: e.target.value })
+								}
+							/>
+						</div>
+
+						{/* Options */}
+						<div className="space-y-2">
+							{question.options.map((option) => (
+								<div key={option.id} className="flex items-center gap-3">
+									<button
+										type="button"
+										onClick={() => setCorrectOption(question.id, option.id)}
+										className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+											question.correctOptionId === option.id
+												? "border-blue-600 bg-blue-600"
+												: "border-neutral-300 hover:border-blue-400"
+										}`}
+									>
+										{question.correctOptionId === option.id && (
+											<div className="w-2 h-2 rounded-full bg-white" />
+										)}
+									</button>
+									<input
+										className="flex-1 border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+										placeholder="Tulis opsi jawaban..."
+										value={option.text}
+										onChange={(e) =>
+											updateOption(question.id, option.id, e.target.value)
+										}
+									/>
+								</div>
+							))}
+						</div>
+
+						{question.correctOptionId === "" && (
+							<p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+								<svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+									<path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+								</svg>
+								Pilih jawaban yang benar dengan klik radio button
+							</p>
+						)}
+					</div>
+				))}
+			</div>
+
+			{/* Add Question + Save */}
+			<div className="flex items-center justify-between pt-2 border-t">
+				<button
+					onClick={addQuestion}
+					className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 border rounded-lg hover:bg-neutral-50 transition-colors"
+				>
+					<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+					</svg>
+					Tambah Pertanyaan
+				</button>
+				<button
+					onClick={() => {
+						// Validasi
+						const hasEmptyQuestion = questions.some(
+							(q) => !q.questionText.trim() || q.correctOptionId === ""
+						);
+						if (hasEmptyQuestion) {
+							window.alert("Pastikan semua pertanyaan memiliki teks dan jawaban benar yang dipilih.");
+							return;
+						}
+						window.alert("Kuis berhasil disimpan!");
+					}}
+					className="flex items-center gap-2 px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+				>
+					<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+					</svg>
+					Simpan Kuis
+				</button>
+			</div>
+		</div>
+	);
+}
 
 export default function NewCoursePage() {
 	const router = useRouter();
@@ -494,15 +712,28 @@ export default function NewCoursePage() {
 					<section className="lg:col-span-2 bg-white rounded-xl border p-5 min-h-[400px]" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
 						<div className="flex items-center justify-between mb-4">
 							<div>
-								<h2 className="text-sm font-semibold">Edit Halaman Materi</h2>
+								<h2 className="text-sm font-semibold">
+									{selectedItem?.type === "quiz" ? "Edit Kuis" : "Edit Halaman Materi"}
+								</h2>
 								<p className="text-xs text-neutral-500 mt-1">
-									Atur judul dan konten untuk halaman materi atau quiz.
+									{selectedItem?.type === "quiz"
+										? "Atur judul kuis dan tambahkan pertanyaan pilihan ganda."
+										: "Atur judul dan konten untuk halaman materi."}
 								</p>
 							</div>
 						</div>
 
 						{selectedModule && selectedItem ? (
-							<div className="space-y-4 text-sm">
+							selectedItem.type === "quiz" ? (
+								/* ========== QUIZ EDITOR ========== */
+								<QuizEditor
+									selectedItem={selectedItem}
+									selectedModule={selectedModule}
+									updateCourse={updateCourse}
+								/>
+							) : (
+								/* ========== PAGE EDITOR ========== */
+								<div className="space-y-4 text-sm">
 								<div>
 									<label className="block text-xs font-medium text-neutral-700 mb-1">
 										Judul Halaman
@@ -614,6 +845,7 @@ export default function NewCoursePage() {
 									</div>
 								</div>
 							</div>
+							)
 						) : (
 							<div className="flex flex-col items-center justify-center h-64 text-center">
 								<div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
