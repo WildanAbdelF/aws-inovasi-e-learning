@@ -149,10 +149,67 @@ export const dummyCourses: Course[] = [
         items: [
           {
             id: "m7-i1",
-            title: "Kuis Evaluasi",
+            title: "Kuis: Pengenalan UI/UX",
             type: "quiz",
             content:
-              "Jawab 10 pertanyaan pilihan ganda untuk menguji pemahaman Anda mengenai konsep UX yang telah dipelajari.",
+              "Jawab 5 pertanyaan pilihan ganda untuk menguji pemahaman Anda mengenai konsep UX yang telah dipelajari.",
+            quizQuestions: [
+              {
+                id: "q1",
+                questionText: "What is the primary goal of User Interface (UI) Design?",
+                options: [
+                  { id: "q1-a", text: "To make the interface visually appealing." },
+                  { id: "q1-b", text: "To ensure the product is functional and usable." },
+                  { id: "q1-c", text: "To guide the user's interaction with the product." },
+                  { id: "q1-d", text: "To write the code for the application." },
+                ],
+                correctOptionId: "q1-b",
+              },
+              {
+                id: "q2",
+                questionText: "What does UX stand for?",
+                options: [
+                  { id: "q2-a", text: "User Experience" },
+                  { id: "q2-b", text: "User Interface" },
+                  { id: "q2-c", text: "User Expansion" },
+                  { id: "q2-d", text: "User Index" },
+                ],
+                correctOptionId: "q2-a",
+              },
+              {
+                id: "q3",
+                questionText: "Which of these is a popular UI design tool?",
+                options: [
+                  { id: "q3-a", text: "Microsoft Excel" },
+                  { id: "q3-b", text: "Figma" },
+                  { id: "q3-c", text: "Notepad++" },
+                  { id: "q3-d", text: "Visual Studio Code" },
+                ],
+                correctOptionId: "q3-b",
+              },
+              {
+                id: "q4",
+                questionText: "What is a 'Persona' in UX Design?",
+                options: [
+                  { id: "q4-a", text: "A type of font used in design." },
+                  { id: "q4-b", text: "A fictional representation of your ideal user." },
+                  { id: "q4-c", text: "A color palette for branding." },
+                  { id: "q4-d", text: "A layout grid system." },
+                ],
+                correctOptionId: "q4-b",
+              },
+              {
+                id: "q5",
+                questionText: "What is the purpose of a 'User Journey Map'?",
+                options: [
+                  { id: "q5-a", text: "To track user login sessions." },
+                  { id: "q5-b", text: "To visualize the user's end-to-end experience with a product." },
+                  { id: "q5-c", text: "To design the database schema." },
+                  { id: "q5-d", text: "To create marketing campaigns." },
+                ],
+                correctOptionId: "q5-b",
+              },
+            ],
           },
         ],
       },
