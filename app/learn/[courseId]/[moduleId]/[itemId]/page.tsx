@@ -29,6 +29,9 @@ export default function LearnDetailPage() {
 	const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
 	const [quizSubmitted, setQuizSubmitted] = useState(false);
 
+	// Sidebar toggle state
+	const [sidebarOpen, setSidebarOpen] = useState(true);
+
 	const quizQuestions: QuizQuestion[] = currentItem?.quizQuestions || [];
 	const isQuizItem = currentItem?.type === "quiz" && quizQuestions.length > 0;
 
@@ -312,12 +315,107 @@ export default function LearnDetailPage() {
 		);
 	};
 
+	// Render sidebar for quiz view
+	const renderQuizSidebar = () => (
+		<aside
+			className={`bg-white border-r shadow-sm transition-all duration-300 overflow-hidden flex-shrink-0 ${
+				sidebarOpen ? "w-72 p-5" : "w-0 p-0"
+			}`}
+		>
+			<div className={`transition-opacity duration-200 ${sidebarOpen ? "opacity-100" : "opacity-0"}`}>
+				<p className="text-sm text-neutral-500 mb-2">{course.title}</p>
+				<h2 className="text-lg font-bold mb-4">Progress Keseluruhan</h2>
+				<div className="mb-6">
+					<div className="flex justify-between text-xs text-neutral-500 mb-2">
+						<span>{progressPercent}%</span>
+						<span>
+							{completedLessons}/{totalLessons} pelajaran
+						</span>
+					</div>
+					<div className="h-2 rounded-full bg-neutral-200">
+						<div
+							className="h-full rounded-full bg-rose-500 transition-all"
+							style={{ width: `${progressPercent}%` }}
+						/>
+					</div>
+				</div>
+				<div className="space-y-4">
+					{modules.map((module) => (
+						<div key={module.id}>
+							<p className="text-sm font-semibold text-neutral-800 mb-2">
+								{module.title}
+							</p>
+							<div className="space-y-1">
+								{module.items.map((item) => {
+									const isActive = item.id === currentItem.id;
+									const isCompleted = progress.includes(item.id);
+									return (
+										<button
+											key={item.id}
+											onClick={() => handleNavigate({
+												moduleId: module.id,
+												moduleTitle: module.title,
+												itemId: item.id,
+												itemTitle: item.title,
+											})}
+											className={`w-full text-left text-xs px-3 py-2 rounded-lg border transition flex items-center gap-2 ${
+												isActive
+													? "border-rose-500 bg-rose-50 text-rose-600"
+													: "border-transparent bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+											}`}
+										>
+											{item.type === "quiz" ? (
+												<span className="text-amber-500">📝</span>
+											) : (
+												<span className="text-blue-500">📄</span>
+											)}
+											<span className="flex-1 truncate">{item.title}</span>
+											{isCompleted && (
+												<span className="text-green-600 text-xs">✓</span>
+											)}
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
+		</aside>
+	);
+
 	return (
 		<div className="min-h-screen bg-neutral-50">
 			{isQuizItem ? (
-				/* ========== QUIZ VIEW ========== */
-				<div className="max-w-4xl mx-auto py-10 px-4">
-					{renderQuiz()}
+				/* ========== QUIZ VIEW WITH COLLAPSIBLE SIDEBAR ========== */
+				<div className="flex min-h-screen">
+					{/* Sidebar Toggle Button - Bottom Left */}
+					<button
+						onClick={() => setSidebarOpen(!sidebarOpen)}
+						className="fixed bottom-6 left-6 z-50 flex items-center gap-2 px-4 py-3 bg-white border rounded-full shadow-lg hover:bg-neutral-50 transition-colors"
+						title={sidebarOpen ? "Sembunyikan Sidebar" : "Tampilkan Sidebar"}
+					>
+						{sidebarOpen ? (
+							<svg className="w-5 h-5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+							</svg>
+						) : (
+							<svg className="w-5 h-5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+							</svg>
+						)}
+						<span className="text-sm font-medium text-neutral-700">
+							{sidebarOpen ? "Sembunyikan" : "Modul"}
+						</span>
+					</button>
+
+					{/* Collapsible Sidebar */}
+					{renderQuizSidebar()}
+
+					{/* Quiz Content */}
+					<div className="flex-1 py-10 px-4">
+						{renderQuiz()}
+					</div>
 				</div>
 			) : (
 				/* ========== REGULAR LESSON VIEW ========== */
