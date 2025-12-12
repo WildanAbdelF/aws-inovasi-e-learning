@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getUser, getRegisteredUsers, clearUser, clearPurchases, StoredUser } from "@/lib/localStorageHelper";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export default function UserManagementPage() {
   const router = useRouter();
+  const { logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [admin, setAdmin] = useState<any>(null);
@@ -129,8 +131,7 @@ export default function UserManagementPage() {
             </div>
             <button
               onClick={() => {
-                clearUser();
-                clearPurchases();
+                logout();
                 router.push("/");
               }}
               className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800"

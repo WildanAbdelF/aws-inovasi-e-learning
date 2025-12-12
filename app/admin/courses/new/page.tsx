@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getUser, clearUser, clearPurchases } from "@/lib/localStorageHelper";
+import { useAuth } from "@/components/providers/AuthProvider";
 import {
 	AdminCourse,
 	createEmptyAdminCourse,
@@ -237,6 +238,7 @@ function QuizEditor({
 
 export default function NewCoursePage() {
 	const router = useRouter();
+	const { logout } = useAuth();
 	const [loading, setLoading] = useState(true);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const [user, setUser] = useState<any>(null);
@@ -438,8 +440,7 @@ export default function NewCoursePage() {
 						</div>
 						<button
 							onClick={() => {
-								clearUser();
-								clearPurchases();
+								logout();
 								router.push("/");
 							}}
 							className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800"

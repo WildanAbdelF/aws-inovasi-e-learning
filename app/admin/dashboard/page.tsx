@@ -6,9 +6,11 @@ import Link from "next/link";
 import { getUser } from "@/lib/localStorageHelper";
 import { getAdminCourses } from "@/lib/adminCoursesStorage";
 import { getRegisteredUsers } from "@/lib/localStorageHelper";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const { logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -34,12 +36,6 @@ export default function AdminDashboardPage() {
 
     setLoading(false);
   }, [router]);
-
-  const handleLogout = () => {
-    const { logout } = require("@/lib/localStorageHelper");
-    logout?.();
-    router.push("/");
-  };
 
   if (loading) {
     return (
@@ -148,9 +144,7 @@ export default function AdminDashboardPage() {
             </div>
             <button
               onClick={() => {
-                const { clearUser, clearPurchases } = require("@/lib/localStorageHelper");
-                clearUser();
-                clearPurchases();
+                logout();
                 router.push("/");
               }}
               className="flex items-center gap-2 text-xs lg:text-sm text-neutral-500 hover:text-neutral-800 w-full lg:w-auto"

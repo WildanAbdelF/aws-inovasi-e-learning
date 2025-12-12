@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { getUser, clearUser, clearPurchases } from "@/lib/localStorageHelper";
+import { useAuth } from "@/components/providers/AuthProvider";
 import {
 	AdminCourse,
 	getAdminCourses,
@@ -18,6 +19,7 @@ import {
 
 export default function EditCoursePage() {
 	const router = useRouter();
+	const { logout } = useAuth();
 	const params = useParams();
 	const courseId = params?.id as string;
 
@@ -223,8 +225,7 @@ export default function EditCoursePage() {
 					</div>
 					<button
 						onClick={() => {
-							clearUser();
-							clearPurchases();
+							logout();
 							router.push("/");
 						}}
 						className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800"
