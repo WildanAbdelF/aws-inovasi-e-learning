@@ -4,6 +4,7 @@ export const LS_KEYS = {
 	REGISTERED_USERS: "lms_registered_users", // All registered users (persistent)
 	PURCHASES: "lms_purchases",
 	SUBSCRIPTIONS: "lms_course_subscriptions",
+	CERTIFICATES: "lms_certificates", // User certificates
 };
 
 export type StoredUser = {
@@ -197,4 +198,60 @@ export function logout() {
 	clearUser();
 	clearPurchases();
 	clearSubscriptions();
+}
+
+// === CERTIFICATES ===
+
+export type Certificate = {
+	id: string;
+	courseId: string;
+	courseTitle: string;
+	userName: string;
+	userEmail: string;
+	instructorName: string;
+	completedAt: string; // ISO string
+};
+
+function getCertificateKey(userEmail: string) {
+	return `${LS_KEYS.CERTIFICATES}_${userEmail}`;
+}
+
+export function getCertificates(userEmail: string): Certificate[] {
+	if (!isBrowser()) return [];
+	const key = getCertificateKey(userEmail);
+	const raw = window.localStorage.getItem(key);
+	if (!raw) return [];
+	try {
+		return JSON.parse(raw) as Certificate[];
+	} catch {
+		return [];
+	}
+}
+
+export function addCertificate(cert: Omit<Certificate, "id" | "completedAt">): Certificate | null {
+	if (!isBrowser()) return null;
+	const existing = getCertificates(cert.userEmail);
+	// Check if certificate already exists for this course
+	const alreadyExists = existing.some((c) => c.courseId === cert.courseId);
+	if (alreadyExists) {
+		return existing.find((c) => c.courseId === cert.courseId) || null;
+	}
+	const newCert: Certificate = {
+		...cert,
+		id: `cert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+		completedAt: new Date().toISOString(),
+	};
+	const updated = [...existing, newCert];
+	window.localStorage.setItem(getCertificateKey(cert.userEmail), JSON.stringify(updated));
+	return newCert;
+}
+
+export function getCertificateByCourseId(userEmail: string, courseId: string): Certificate | null {
+	const certs = getCertificates(userEmail);
+	return certs.find((c) => c.courseId === courseId) || null;
+}
+
+export function clearCertificates(userEmail: string) {
+	if (!isBrowser()) return;
+	window.localStorage.removeItem(getCertificateKey(userEmail));
 }

@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { dummyCourses } from "@/lib/data/courses.data";
-import { getPurchases, getSubscriptionByCourseId, getUser } from "@/lib/localStorageHelper";
+import { getPurchases, getSubscriptionByCourseId, getUser, addCertificate, getCertificateByCourseId, Certificate } from "@/lib/localStorageHelper";
 import type { QuizQuestion } from "@/types/course";
+import CertificateModal from "@/components/certificate/CertificateModal";
 
 type ProgressMap = Record<string, string[]>;
 
@@ -35,6 +36,11 @@ export default function LearnDetailPage() {
 	// Sidebar toggle state
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 
+	// Certificate state
+	const [showCertificate, setShowCertificate] = useState(false);
+	const [currentCertificate, setCurrentCertificate] = useState<Certificate | null>(null);
+	const [currentUserName, setCurrentUserName] = useState<string>("");
+
 	const quizQuestions: QuizQuestion[] = currentItem?.quizQuestions || [];
 	const isQuizItem = currentItem?.type === "quiz" && quizQuestions.length > 0;
 
@@ -46,6 +52,7 @@ export default function LearnDetailPage() {
 			return;
 		}
 		setCurrentUserEmail(user.email);
+		setCurrentUserName(user.name);
 		const purchases = getPurchases();
 		const hasLifetime = purchases.some((p) => p.id === course.id);
 		const hasSubscription = Boolean(getSubscriptionByCourseId(course.id));
@@ -97,6 +104,34 @@ export default function LearnDetailPage() {
 	const progressPercent = totalLessons
 		? Math.min(100, Math.round((completedLessons / totalLessons) * 100))
 		: 0;
+
+	// Check if course is completed (all lessons done)
+	const isCourseCompleted = totalLessons > 0 && completedLessons >= totalLessons;
+
+	// Check and award certificate when course is completed
+	useEffect(() => {
+		if (!isCourseCompleted || !currentUserEmail || !course) return;
+		
+		// Check if user already has certificate for this course
+		const existingCert = getCertificateByCourseId(currentUserEmail, course.id);
+		if (existingCert) {
+			setCurrentCertificate(existingCert);
+			return;
+		}
+
+		// Award new certificate
+		const newCert = addCertificate({
+			courseId: course.id,
+			courseTitle: course.title,
+			userName: currentUserName,
+			userEmail: currentUserEmail,
+			instructorName: course.author || "Tim Instruktur",
+		});
+		if (newCert) {
+			setCurrentCertificate(newCert);
+			setShowCertificate(true); // Automatically show certificate modal
+		}
+	}, [isCourseCompleted, currentUserEmail, course, currentUserName]);
 
 	const currentIndex = flattenedLessons.findIndex((entry) => entry.itemId === itemId);
 	const prevLesson = currentIndex > 0 ? flattenedLessons[currentIndex - 1] : null;
@@ -280,10 +315,12 @@ export default function LearnDetailPage() {
 					</p>
 					<p className="text-sm text-neutral-500 mb-6">
 						{passed
-							? "Anda telah berhasil menyelesaikan kuis ini."
+							? isCourseCompleted
+								? "Selamat! Anda telah menyelesaikan seluruh kursus ini. Sertifikat Anda sudah tersedia!"
+								: "Anda telah berhasil menyelesaikan kuis ini."
 							: "Anda membutuhkan minimal 70% untuk lulus. Silakan coba lagi."}
 					</p>
-					<div className="flex gap-3 justify-center">
+					<div className="flex gap-3 justify-center flex-wrap">
 						<button
 							onClick={() => {
 								setQuizSubmitted(false);
@@ -300,6 +337,17 @@ export default function LearnDetailPage() {
 								className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
 							>
 								Lanjut ke Materi Berikutnya
+							</button>
+						)}
+						{passed && isCourseCompleted && currentCertificate && (
+							<button
+								onClick={() => setShowCertificate(true)}
+								className="px-6 py-3 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-2"
+							>
+								<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+								</svg>
+								Lihat Sertifikat
 							</button>
 						)}
 					</div>
@@ -525,9 +573,34 @@ export default function LearnDetailPage() {
 								{nextLesson ? "Selesai & Lanjutkan" : "Selesai"}
 							</button>
 						</div>
+
+						{/* Show certificate button if course is completed */}
+						{isCourseCompleted && currentCertificate && (
+							<div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
+								<p className="text-green-800 font-medium mb-3">
+									🎉 Selamat! Anda telah menyelesaikan kursus ini!
+								</p>
+								<button
+									onClick={() => setShowCertificate(true)}
+									className="px-6 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 inline-flex items-center gap-2"
+								>
+									<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+									</svg>
+									Lihat Sertifikat
+								</button>
+							</div>
+						)}
 					</main>
 				</div>
 			)}
+
+			{/* Certificate Modal */}
+			<CertificateModal
+				open={showCertificate}
+				onClose={() => setShowCertificate(false)}
+				certificate={currentCertificate}
+			/>
 		</div>
 	);
 }

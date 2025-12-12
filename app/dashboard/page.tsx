@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser, getPurchases, getSubscriptions, StoredUser } from "@/lib/localStorageHelper";
+import { getUser, getPurchases, getSubscriptions, getCertificates, StoredUser, Certificate } from "@/lib/localStorageHelper";
 import { dummyCourses } from "@/lib/data/courses.data";
+import CertificateModal from "@/components/certificate/CertificateModal";
 
 type DashboardCourse = {
 	id: string;
@@ -14,10 +15,16 @@ type DashboardCourse = {
 	expiresAt?: string | null;
 };
 
+type TabType = "courses" | "certificates";
+
 export default function DashboardPage() {
 	const router = useRouter();
 	const [user, setUser] = useState<StoredUser | null>(null);
 	const [myCourses, setMyCourses] = useState<DashboardCourse[]>([]);
+	const [certificates, setCertificates] = useState<Certificate[]>([]);
+	const [activeTab, setActiveTab] = useState<TabType>("courses");
+	const [showCertificate, setShowCertificate] = useState(false);
+	const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
 
 	useEffect(() => {
 		const storedUser = getUser();
@@ -27,6 +34,7 @@ export default function DashboardPage() {
 		}
 		setUser(storedUser);
 		setMyCourses(buildAccessibleCourses());
+		setCertificates(getCertificates(storedUser.email));
 	}, [router]);
 
 	const buildAccessibleCourses = (): DashboardCourse[] => {
