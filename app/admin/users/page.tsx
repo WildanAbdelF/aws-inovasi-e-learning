@@ -28,6 +28,10 @@ export default function UserManagementPage() {
   const [editSubscriptionStatus, setEditSubscriptionStatus] = useState<"active" | "inactive" | "pending">("active");
   const [editLifetimeCourses, setEditLifetimeCourses] = useState<{ id: string; title: string }[]>([]);
   const [showCourseDropdown, setShowCourseDropdown] = useState(false);
+  
+  // Success dialog state
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [savedUserName, setSavedUserName] = useState("");
 
   const openEditModal = (user: StoredUser) => {
     setEditingUser(user as EditingUser);
@@ -68,7 +72,12 @@ export default function UserManagementPage() {
       // Refresh users list
       const registeredUsers = getRegisteredUsers();
       setUsers(registeredUsers);
+      setSavedUserName(editName);
       closeEditModal();
+      // Show success dialog with slight delay for animation
+      setTimeout(() => {
+        setSuccessDialogOpen(true);
+      }, 200);
     }
   };
 
@@ -176,16 +185,6 @@ export default function UserManagementPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 User Management
-              </Link>
-              <Link
-                href="/admin/payments"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-600 hover:bg-neutral-100"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-                Payment Management
               </Link>
             </nav>
           </div>
@@ -354,8 +353,8 @@ export default function UserManagementPage() {
 
       {/* Edit User Modal */}
       {editModalOpen && editingUser && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl animate-modal-slide-up">
             {/* Modal Header */}
             <div className="p-6 border-b">
               <h2 className="text-xl font-bold text-neutral-900">Edit Data Pengguna</h2>
@@ -507,6 +506,136 @@ export default function UserManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Success Dialog */}
+      {successDialogOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="bg-white rounded-2xl w-full max-w-sm shadow-xl transform animate-bounce-in"
+          >
+            <div className="p-8 text-center">
+              {/* Animated Success Icon */}
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center animate-success-circle">
+                <svg
+                  className="w-10 h-10 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                    className="animate-check-draw"
+                    style={{
+                      strokeDasharray: 24,
+                      strokeDashoffset: 24,
+                      animation: 'checkDraw 0.5s ease-out 0.3s forwards'
+                    }}
+                  />
+                </svg>
+              </div>
+              
+              <h3 className="text-xl font-bold text-neutral-900 mb-2">
+                Berhasil!
+              </h3>
+              <p className="text-sm text-neutral-600 mb-6">
+                Data pengguna <strong>{savedUserName}</strong> berhasil diperbarui.
+              </p>
+              
+              <button
+                onClick={() => setSuccessDialogOpen(false)}
+                className="px-6 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all duration-200 transform hover:scale-105"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom CSS for animations */}
+      <style jsx global>{`
+        @keyframes bounceIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.3);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+          70% {
+            transform: scale(0.9);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes modalSlideUp {
+          0% {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @keyframes successCircle {
+          0% {
+            transform: scale(0);
+            opacity: 0;
+          }
+          50% {
+            transform: scale(1.1);
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+
+        @keyframes checkDraw {
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        .animate-modal-slide-up {
+          animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .animate-bounce-in {
+          animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .animate-success-circle {
+          animation: successCircle 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .animate-check-draw {
+          stroke-dasharray: 24;
+          stroke-dashoffset: 24;
+          animation: checkDraw 0.5s ease-out 0.3s forwards;
+        }
+      `}</style>
     </div>
   );
 }
