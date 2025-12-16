@@ -244,6 +244,8 @@ export function logout() {
 	if (user) {
 		// Clear user's course progress
 		clearUserProgress(user.email);
+		// Clear user's certificates (for testing purposes)
+		clearCertificates(user.email);
 	}
 	// Clear session data
 	clearUser();
