@@ -1,3 +1,9 @@
+/**
+ * Components Index
+ * ================
+ * Barrel exports untuk semua reusable components
+ */
+
 // Layout
 export { Navbar, Footer } from "./layout";
 
@@ -17,5 +23,9 @@ export {
   CourseCatalog,
 } from "./course";
 
+// Certificate
+export { CertificateModal } from "./certificate";
+
 // Providers
 export { AuthProvider, useAuth, AOSProvider } from "./providers";
+

@@ -1,200 +1,342 @@
+# 🎓 AWS Inovasi E-Learning Platform
 
+<div align="center">
 
-# 🚀 AWS Inovasi E-Learning — Next.js + TypeScript + shadcn/ui
+![Next.js](https://img.shields.io/badge/Next.js-16.x-black?style=for-the-badge&logo=next.js)
+![React](https://img.shields.io/badge/React-19.x-61DAFB?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.x-06B6D4?style=for-the-badge&logo=tailwindcss)
 
-Platform e-learning modern yang dibangun menggunakan **Next.js (App Router)**, **TypeScript**, **TailwindCSS**, **shadcn/ui**, serta autentikasi lokal berbasis LocalStorage.
-Aplikasi ini mencakup fitur login, register, dashboard, dan komponen UI yang reusable.
+**Platform e-learning modern untuk pembelajaran digital yang interaktif dan engaging**
+
+[Demo](#demo) • [Fitur](#-fitur-utama) • [Instalasi](#-instalasi) • [Struktur](#-struktur-project) • [Roadmap](#-roadmap)
+
+</div>
 
 ---
 
-# 📥 Instalasi & Setup Project
+## 📖 Tentang Project
 
-Ikuti langkah-langkah berikut untuk menjalankan project dari awal.
+AWS Inovasi E-Learning adalah platform Learning Management System (LMS) yang dibangun dengan teknologi modern. Platform ini dirancang untuk memberikan pengalaman belajar yang interaktif dengan fitur-fitur seperti:
+
+- 🎥 Video pembelajaran embedded
+- 📝 Quiz interaktif dengan scoring
+- 🏆 Sistem sertifikat otomatis
+- 👨‍💼 Dashboard admin untuk manajemen konten
+- 📱 Fully responsive untuk semua device
+
+> **Note**: Versi saat ini adalah **Demo Stage** menggunakan localStorage. Production version akan menggunakan **Supabase** untuk backend.
 
 ---
 
-## 1️⃣ **Clone Repository**
+## ✨ Fitur Utama
 
-Jika project sudah ada di GitHub:
+### 🔐 Authentication System
+- Login & Register dengan email/password
+- Role-based access (Admin / User)
+- Protected routes dengan redirect
+- Forgot password flow
+
+### 📚 Course Management
+- Katalog kursus dengan search & filter
+- Detail kursus dengan curriculum preview
+- Purchase & subscription system
+- Admin CRUD untuk courses
+
+### 📖 Learning Experience
+- Module-based learning path
+- Video & text content support
+- Interactive quiz dengan instant feedback
+- Progress tracking per-user
+- Auto-save progress
+
+### 🏆 Certificate System
+- Auto-generate setelah course completion
+- Download sebagai PDF
+- Certificate gallery di dashboard
+
+### 👨‍💼 Admin Dashboard
+- Course management (CRUD)
+- User management
+- Access control (grant/revoke)
+- Analytics overview
+
+---
+
+## 🛠 Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| **Framework** | Next.js 16+ (App Router) |
+| **Language** | TypeScript 5.x |
+| **UI Library** | React 19.x |
+| **Styling** | TailwindCSS 4.x |
+| **Components** | shadcn/ui (Radix UI) |
+| **Forms** | React Hook Form + Zod |
+| **Animation** | AOS (Animate On Scroll) |
+| **Icons** | Lucide React |
+| **PDF** | jsPDF + html2canvas |
+| **Storage** | localStorage (demo) → Supabase (planned) |
+
+---
+
+## 🚀 Instalasi
+
+### Prerequisites
+- Node.js ≥ 18.x
+- npm atau yarn atau pnpm
+
+### Quick Start
 
 ```bash
-git clone https://github.com/WildanAbdelF/aws-inovasi-e-learning
+# 1. Clone repository
+git clone https://github.com/WildanAbdelF/aws-inovasi-e-learning.git
 cd aws-inovasi-e-learning
-```
 
-Jika belum, cukup masuk ke folder project yang sudah dibuat di lokal.
-
----
-
-## 2️⃣ **Install Dependencies**
-
-Pastikan Node.js ≥ 18 sudah terinstall.
-
-```bash
+# 2. Install dependencies
 npm install
-```
 
----
-
-## 3️⃣ **Jalankan Server Development**
-
-Setelah seluruh dependency terpasang:
-
-```bash
+# 3. Run development server
 npm run dev
 ```
 
-Buka di browser:
-👉 [http://localhost:3000](http://localhost:3000)
+Buka browser: **http://localhost:3000**
 
----
-
-# 🔧 Setup Dari Nol (Jika Membuat Proyek Baru)
-
-Jika ingin membangun project ini dari awal (clean setup), gunakan langkah berikut:
-
----
-
-## 1️⃣ **Buat Project Next.js Baru**
+### Available Scripts
 
 ```bash
-npx create-next-app@latest aws-inovasi-e-learning --typescript --tailwind --app --eslint
-```
-
-Pilih:
-
-* Yes → TypeScript
-* Yes → TailwindCSS
-* Yes → App Router
-* Yes → src directory (No → karena project kita tidak memakai `src`)
-
-Masuk ke folder:
-
-```bash
-cd aws-inovasi-e-learning
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint
 ```
 
 ---
 
-## 2️⃣ **Install shadcn/ui**
-
-```bash
-npx shadcn@latest init
-```
-
-Kemudian tambahkan komponen utama:
-
-```bash
-npx shadcn@latest add button input card avatar form dropdown-menu
-```
-
----
-
-## 3️⃣ **Struktur Folder Project**
-
-Karena aplikasi ini tidak memakai folder `src/`, maka struktur folder:
+## 📁 Struktur Project
 
 ```
 aws-inovasi-e-learning/
 │
-├── app/
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── globals.css
-│   ├── (auth)/
-│   │   ├── login/page.tsx
-│   │   └── register/page.tsx
+├── 📂 app/                          # Next.js App Router
+│   ├── 📄 layout.tsx                # Root layout dengan providers
+│   ├── 📄 page.tsx                  # Homepage
+│   ├── 📄 globals.css               # Global styles
+│   │
+│   ├── 📂 admin/                    # 🔒 Admin pages (protected)
+│   │   ├── 📄 page.tsx              # Admin dashboard
+│   │   ├── 📂 courses/              # Course management
+│   │   │   ├── 📂 new/              # Create new course
+│   │   │   └── 📂 [id]/             # Edit course
+│   │   ├── 📂 dashboard/            # Admin analytics
+│   │   └── 📂 users/                # User management
+│   │
+│   ├── 📂 courses/                  # Public course pages
+│   │   └── 📂 [id]/                 # Course detail
+│   │
+│   ├── 📂 dashboard/                # 🔒 User dashboard
+│   ├── 📂 katalog/                  # Course catalog
+│   │
+│   ├── 📂 learn/                    # 🔒 Learning pages
+│   │   └── 📂 [courseId]/
+│   │       └── 📂 [moduleId]/
+│   │           └── 📂 [itemId]/     # Lesson/quiz page
+│   │
+│   ├── 📂 login/                    # Auth pages
+│   ├── 📂 register/
+│   ├── 📂 forgot-password/
+│   │   ├── 📂 sent/
+│   │   └── 📂 reset/
+│   │
+│   └── 📂 settings/                 # User settings
 │
-├── components/
-│   ├── ui/                 # Komponen shadcn
-│   ├── Navbar.tsx
-│   ├── CourseCard.tsx
-│   └── Footer.tsx
+├── 📂 components/                   # React components
+│   ├── 📄 index.ts                  # Barrel exports
+│   │
+│   ├── 📂 certificate/              # Certificate components
+│   │   └── 📄 CertificateModal.tsx
+│   │
+│   ├── 📂 course/                   # Course components
+│   │   ├── 📄 CourseCard.tsx
+│   │   ├── 📄 CourseCatalog.tsx
+│   │   ├── 📄 CourseList.tsx
+│   │   └── 📄 index.ts
+│   │
+│   ├── 📂 home/                     # Landing page sections
+│   │   ├── 📄 HeroSection.tsx
+│   │   ├── 📄 FeaturedCourses.tsx
+│   │   ├── 📄 LearningModels.tsx
+│   │   ├── 📄 Testimonials.tsx
+│   │   ├── 📄 CTASection.tsx
+│   │   └── 📄 index.ts
+│   │
+│   ├── 📂 layout/                   # Layout components
+│   │   ├── 📄 Navbar.tsx
+│   │   ├── 📄 Footer.tsx
+│   │   └── 📄 index.ts
+│   │
+│   ├── 📂 providers/                # Context providers
+│   │   ├── 📄 AuthProvider.tsx
+│   │   ├── 📄 AOSProvider.tsx
+│   │   └── 📄 index.ts
+│   │
+│   └── 📂 ui/                       # shadcn/ui components
+│       ├── 📄 button.tsx
+│       ├── 📄 card.tsx
+│       ├── 📄 dialog.tsx
+│       ├── 📄 form.tsx
+│       ├── 📄 input.tsx
+│       ├── 📄 label.tsx
+│       └── 📄 sheet.tsx
 │
-├── lib/
-│   ├── AuthProvider.tsx     # Context global Auth
-│   └── localAuth.ts         # Logic login/register/localStorage
+├── 📂 lib/                          # Utilities & helpers
+│   ├── 📄 utils.ts                  # General utilities (cn, etc.)
+│   ├── 📄 localStorageHelper.ts     # localStorage CRUD
+│   ├── 📄 adminCoursesStorage.ts    # Admin course management
+│   │
+│   ├── 📂 data/                     # Static/dummy data
+│   │   ├── 📄 courses.data.ts       # Sample courses
+│   │   └── 📄 index.ts
+│   │
+│   ├── 📂 hooks/                    # Custom React hooks
+│   │   ├── 📄 useInView.ts          # Intersection observer hook
+│   │   └── 📄 index.ts
+│   │
+│   └── 📂 services/                 # 🔮 API services (future)
 │
-├── types/
-│   └── user.ts
+├── 📂 types/                        # TypeScript definitions
+│   ├── 📄 course.ts                 # Course, Module, Quiz types
+│   └── 📄 user.ts                   # User types
 │
-├── public/
-│   └── images/
+├── 📂 public/                       # Static assets
+│   └── 📂 images/                   # Course images, etc.
 │
-├── tailwind.config.ts
-└── package.json
+├── 📂 styles/                       # Additional CSS
+│   └── 📄 custom.css
+│
+├── 📄 components.json               # shadcn/ui config
+├── 📄 next.config.ts                # Next.js config
+├── 📄 tsconfig.json                 # TypeScript config
+├── 📄 package.json
+└── 📄 PROMPTING_GUIDELINE.md        # AI prompting guide
 ```
 
 ---
 
-# 🔐 Fitur Autentikasi
+## 🔐 Role & Access Control
 
-Autentikasi dicatat menggunakan `localStorage`.
+| Page | Guest | User | Admin |
+|------|-------|------|-------|
+| Homepage | ✅ | ✅ | ✅ |
+| Katalog | ✅ | ✅ | ✅ |
+| Course Detail | ✅ | ✅ | ✅ |
+| Login/Register | ✅ | ❌ | ❌ |
+| User Dashboard | ❌ | ✅ | ✅ |
+| Learning Page | ❌ | ✅* | ✅* |
+| Admin Dashboard | ❌ | ❌ | ✅ |
+| Course Management | ❌ | ❌ | ✅ |
+| User Management | ❌ | ❌ | ✅ |
 
-### Fitur:
-
-* Register user baru
-* Login email + password
-* Logout
-* Redirect otomatis:
-
-  * Register → Login
-  * Login → Homepage
-* `AuthProvider` + `useAuth()` sudah menangani:
-
-  * current user
-  * state global
-  * proteksi halaman jika dibutuhkan
+*Requires course access (purchase/subscription/granted)
 
 ---
 
-# 🎨 UI Modern dengan shadcn/ui
+## 💾 Data Storage
 
-Project ini menggunakan shadcn/ui untuk membangun UI yang:
+### Current (Demo Stage)
+Data disimpan di browser localStorage dengan keys:
 
-* Konsisten
-* Modular
-* Mudah digunakan
-* Mengikuti standar desain modern
+| Key | Description |
+|-----|-------------|
+| `lms_user` | Current logged-in user |
+| `lms_registered_users` | All registered users |
+| `lms_purchases` | Lifetime course purchases |
+| `lms_course_subscriptions` | Active subscriptions |
+| `lms_certificates` | User certificates |
+| `lms_admin_courses` | Admin-created courses |
+| `lms_course_progress_{email}` | User learning progress |
 
-Komponen yang dipakai:
+### Planned (Supabase)
+Akan migrasi ke Supabase dengan struktur:
 
-* `<Button>`
-* `<Input>`
-* `<Card>`
-* `<Avatar>`
-* `<DropdownMenu>`
-* `<Form>`
-  dan lainnya.
-
----
-
-# 🧩 Dashboard & Course
-
-* Halaman utama menampilkan daftar course dalam bentuk Card.
-* Data course masih menggunakan dummy data.
-* Komponen UI reusable agar mudah dikembangkan kembali.
-
----
-
-# ▶️ Cara Menjalankan Project Lagi di Lain Waktu
-
-Setiap kali kamu ingin menjalankan:
-
-```bash
-npm install   # hanya jika ada perubahan dependency
-npm run dev
+```sql
+-- Tables
+users, courses, modules, module_contents,
+quiz_questions, user_courses, user_progress, certificates
 ```
 
 ---
 
-# 🚀 Rencana Pengembangan Berikutnya
+## 🎨 Design System
 
-* Integrasi penuh dengan Supabase (Auth, Database, Storage)
-* Halaman admin untuk membuat course
-* Upload thumbnail course
-* Pembayaran / Enrollment
-* Learning page (video + attachments)
-* Role-based authorization
+### Typography
+- **Headings**: Montserrat (600-900 weight)
+- **Body**: Poppins (300-700 weight)
+
+### Colors
+- **Primary**: Red (#dc2626)
+- **Background**: White/Neutral-50
+- **Text**: Neutral-900
+
+### Breakpoints
+- **Mobile**: < 640px
+- **Tablet**: 640px - 1024px
+- **Desktop**: > 1024px
 
 ---
+
+## 📋 Roadmap
+
+### ✅ Phase 1: Demo Stage (Current)
+- [x] Authentication system
+- [x] Course catalog & detail
+- [x] Learning experience dengan quiz
+- [x] Certificate generation
+- [x] Admin dashboard
+- [x] User management
+
+### 🔄 Phase 2: Supabase Integration
+- [ ] Setup Supabase project
+- [ ] Migrate auth to Supabase Auth
+- [ ] Create database tables
+- [ ] Implement API services layer
+- [ ] Real-time progress sync
+
+### 🔮 Phase 3: Enhanced Features
+- [ ] Payment integration
+- [ ] Video upload & streaming
+- [ ] Discussion forum
+- [ ] Email notifications
+- [ ] Analytics dashboard
+- [ ] Mobile app (React Native)
+
+---
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+---
+
+## 📄 License
+
+Project ini dibuat untuk keperluan internal AWS Inovasi.
+
+---
+
+## 📞 Contact
+
+**AWS Inovasi Team**
+- GitHub: [@WildanAbdelF](https://github.com/WildanAbdelF)
+
+---
+
+<div align="center">
+
+**Built with ❤️ using Next.js, TypeScript, and TailwindCSS**
+
+</div>
