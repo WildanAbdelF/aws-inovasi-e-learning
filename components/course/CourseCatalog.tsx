@@ -37,8 +37,8 @@ export default function CourseCatalog() {
         />
 
         <div className="flex gap-2">
-          <button className="px-4 py-2 border rounded">Kategori</button>
-          <button className="px-4 py-2 border rounded">Paling Populer</button>
+          <button className="px-4 py-2 border rounded bg-red-600 text-white hover:bg-red-700 hover:scale-105 transition-transform">Kategori</button>
+          <button className="px-4 py-2 border rounded border-red-600 text-red-600 hover:bg-red-600 hover:text-white hover:scale-105 transition-transform">Paling Populer</button>
         </div>
       </div>
 
