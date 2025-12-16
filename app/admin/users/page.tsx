@@ -3,8 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser, getRegisteredUsers, clearUser, clearPurchases, StoredUser } from "@/lib/localStorageHelper";
+import { getUser, getRegisteredUsers, clearUser, clearPurchases, StoredUser, updateRegisteredUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { dummyCourses } from "@/lib/data/courses.data";
+
+type EditingUser = StoredUser & {
+  lifetimeCourses?: { id: string; title: string }[];
+  subscriptionStatus?: "active" | "inactive" | "pending";
+};
 
 export default function UserManagementPage() {
   const router = useRouter();
@@ -13,6 +19,62 @@ export default function UserManagementPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [admin, setAdmin] = useState<any>(null);
   const [users, setUsers] = useState<StoredUser[]>([]);
+  
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editSubscriptionStatus, setEditSubscriptionStatus] = useState<"active" | "inactive" | "pending">("active");
+  const [editLifetimeCourses, setEditLifetimeCourses] = useState<{ id: string; title: string }[]>([]);
+  const [showCourseDropdown, setShowCourseDropdown] = useState(false);
+
+  const openEditModal = (user: StoredUser) => {
+    setEditingUser(user as EditingUser);
+    setEditName(user.name);
+    setEditEmail(user.email);
+    setEditSubscriptionStatus((user as EditingUser).subscriptionStatus || "active");
+    setEditLifetimeCourses((user as EditingUser).lifetimeCourses || []);
+    setEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditModalOpen(false);
+    setEditingUser(null);
+    setShowCourseDropdown(false);
+  };
+
+  const handleAddCourse = (course: { id: string; title: string }) => {
+    if (!editLifetimeCourses.some((c) => c.id === course.id)) {
+      setEditLifetimeCourses([...editLifetimeCourses, course]);
+    }
+    setShowCourseDropdown(false);
+  };
+
+  const handleRemoveCourse = (courseId: string) => {
+    setEditLifetimeCourses(editLifetimeCourses.filter((c) => c.id !== courseId));
+  };
+
+  const handleSaveUser = () => {
+    if (!editingUser) return;
+    
+    const success = updateRegisteredUser(editingUser.email, {
+      name: editName,
+      subscriptionStatus: editSubscriptionStatus,
+      lifetimeCourses: editLifetimeCourses,
+    });
+
+    if (success) {
+      // Refresh users list
+      const registeredUsers = getRegisteredUsers();
+      setUsers(registeredUsers);
+      closeEditModal();
+    }
+  };
+
+  const availableCourses = dummyCourses.filter(
+    (course) => !editLifetimeCourses.some((c) => c.id === course.id)
+  );
 
   useEffect(() => {
     const stored = getUser() as any;
@@ -80,7 +142,7 @@ export default function UserManagementPage() {
                   <path d="M12 2L3 7v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5z" />
                 </svg>
               </div>
-              <span className="font-semibold text-neutral-800">Admin LMS</span>
+              <span className="font-semibold text-neutral-800">LMS Admin</span>
             </div>
 
             {/* Nav */}
@@ -114,6 +176,16 @@ export default function UserManagementPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 User Management
+              </Link>
+              <Link
+                href="/admin/payments"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-600 hover:bg-neutral-100"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Payment Management
               </Link>
             </nav>
           </div>
@@ -216,6 +288,7 @@ export default function UserManagementPage() {
                       <th className="text-left py-3 px-5 text-sm font-medium text-neutral-600">Email</th>
                       <th className="text-left py-3 px-5 text-sm font-medium text-neutral-600">Role</th>
                       <th className="text-left py-3 px-5 text-sm font-medium text-neutral-600">Status</th>
+                      <th className="text-left py-3 px-5 text-sm font-medium text-neutral-600">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -244,9 +317,30 @@ export default function UserManagementPage() {
                           </span>
                         </td>
                         <td className="py-4 px-5">
-                          <span className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                            Active
+                          <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
+                            (user as EditingUser).subscriptionStatus === "inactive"
+                              ? "bg-red-100 text-red-700"
+                              : (user as EditingUser).subscriptionStatus === "pending"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-green-100 text-green-700"
+                          }`}>
+                            {(user as EditingUser).subscriptionStatus === "inactive"
+                              ? "Tidak Aktif"
+                              : (user as EditingUser).subscriptionStatus === "pending"
+                              ? "Pending"
+                              : "Aktif"}
                           </span>
+                        </td>
+                        <td className="py-4 px-5">
+                          <button
+                            onClick={() => openEditModal(user)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -257,6 +351,162 @@ export default function UserManagementPage() {
           </div>
         </main>
       </div>
+
+      {/* Edit User Modal */}
+      {editModalOpen && editingUser && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+            {/* Modal Header */}
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-bold text-neutral-900">Edit Data Pengguna</h2>
+              <p className="text-sm text-neutral-500 mt-1">
+                {editingUser.name} ({editingUser.email})
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Personal Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-neutral-900 mb-4">Informasi Pribadi</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                      Nama Lengkap
+                    </label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={editEmail}
+                      disabled
+                      className="w-full px-4 py-2.5 border border-neutral-200 rounded-lg bg-neutral-100 text-neutral-500 cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Management */}
+              <div>
+                <h3 className="text-lg font-semibold text-neutral-900 mb-4">Manajemen Akun</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                      Status Langganan
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={editSubscriptionStatus}
+                        onChange={(e) => setEditSubscriptionStatus(e.target.value as "active" | "inactive" | "pending")}
+                        className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all appearance-none bg-white"
+                      >
+                        <option value="active">Aktif</option>
+                        <option value="inactive">Tidak Aktif</option>
+                        <option value="pending">Pending</option>
+                      </select>
+                      <svg className="w-5 h-5 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Lifetime Course Access */}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                      Akses Kursus Lifetime
+                    </label>
+                    
+                    {/* List of assigned courses */}
+                    <div className="space-y-2 mb-3">
+                      {editLifetimeCourses.length === 0 ? (
+                        <p className="text-sm text-neutral-500 italic py-2">
+                          Belum ada kursus yang ditambahkan
+                        </p>
+                      ) : (
+                        editLifetimeCourses.map((course) => (
+                          <div
+                            key={course.id}
+                            className="flex items-center justify-between px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-lg"
+                          >
+                            <span className="text-sm font-medium text-neutral-800">{course.title}</span>
+                            <button
+                              onClick={() => handleRemoveCourse(course.id)}
+                              className="text-red-500 hover:text-red-700 transition-colors"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Add Course Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowCourseDropdown(!showCourseDropdown)}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Tambah Akses Kursus
+                      </button>
+
+                      {showCourseDropdown && (
+                        <div className="absolute top-full left-0 mt-2 w-full max-w-md bg-white border border-neutral-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                          {availableCourses.length === 0 ? (
+                            <div className="px-4 py-3 text-sm text-neutral-500 text-center">
+                              Semua kursus sudah ditambahkan
+                            </div>
+                          ) : (
+                            availableCourses.map((course) => (
+                              <button
+                                key={course.id}
+                                onClick={() => handleAddCourse({ id: course.id, title: course.title })}
+                                className="w-full text-left px-4 py-3 hover:bg-neutral-50 transition-colors border-b last:border-b-0"
+                              >
+                                <span className="text-sm font-medium text-neutral-800">{course.title}</span>
+                                <span className="block text-xs text-neutral-500 mt-0.5">{course.author}</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t bg-neutral-50 rounded-b-2xl flex justify-end gap-3">
+              <button
+                onClick={closeEditModal}
+                className="px-5 py-2.5 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveUser}
+                className="px-5 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Simpan Perubahan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

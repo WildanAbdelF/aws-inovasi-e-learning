@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { dummyCourses } from "@/lib/data/courses.data";
-import { getPurchases, getSubscriptionByCourseId, getUser, addCertificate, getCertificateByCourseId, Certificate } from "@/lib/localStorageHelper";
+import { getPurchases, getSubscriptionByCourseId, getUser, addCertificate, getCertificateByCourseId, Certificate, hasLifetimeAccess } from "@/lib/localStorageHelper";
 import type { QuizQuestion } from "@/types/course";
 import CertificateModal from "@/components/certificate/CertificateModal";
 
@@ -56,9 +56,10 @@ export default function LearnDetailPage() {
 		setCurrentUserEmail(user.email);
 		setCurrentUserName(user.name);
 		const purchases = getPurchases();
-		const hasLifetime = purchases.some((p) => p.id === course.id);
+		const hasLifetimePurchase = purchases.some((p) => p.id === course.id);
+		const hasAdminGrantedAccess = hasLifetimeAccess(user.email, course.id);
 		const hasSubscription = Boolean(getSubscriptionByCourseId(course.id));
-		const hasAccess = hasLifetime || hasSubscription;
+		const hasAccess = hasLifetimePurchase || hasAdminGrantedAccess || hasSubscription;
 		if (!hasAccess) {
 			router.replace("/dashboard");
 			return;

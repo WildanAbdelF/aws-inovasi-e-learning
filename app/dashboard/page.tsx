@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser, getPurchases, getSubscriptions, getCertificates, StoredUser, Certificate } from "@/lib/localStorageHelper";
+import { getUser, getPurchases, getSubscriptions, getCertificates, getUserLifetimeCourses, StoredUser, Certificate } from "@/lib/localStorageHelper";
 import { dummyCourses } from "@/lib/data/courses.data";
 import CertificateModal from "@/components/certificate/CertificateModal";
 
@@ -34,11 +34,11 @@ export default function DashboardPage() {
 			return;
 		}
 		setUser(storedUser);
-		setMyCourses(buildAccessibleCourses());
+		setMyCourses(buildAccessibleCourses(storedUser.email));
 		setCertificates(getCertificates(storedUser.email));
 	}, [router]);
 
-	const buildAccessibleCourses = (): DashboardCourse[] => {
+	const buildAccessibleCourses = (userEmail: string): DashboardCourse[] => {
 		const purchases = getPurchases().map((course) => ({
 			id: course.id,
 			title: course.title,
@@ -53,10 +53,24 @@ export default function DashboardPage() {
 			accessType: "subscription" as const,
 			expiresAt: sub.expiresAt,
 		}));
+		// Include admin-granted lifetime courses
+		const adminGrantedCourses = getUserLifetimeCourses(userEmail).map((course) => ({
+			id: course.id,
+			title: course.title,
+			price: null,
+			accessType: "lifetime" as const,
+			expiresAt: null,
+		}));
 
 		const map = new Map<string, DashboardCourse>();
 		purchases.forEach((course) => {
 			map.set(course.id, course);
+		});
+		// Admin-granted courses (won't overwrite purchases)
+		adminGrantedCourses.forEach((course) => {
+			if (!map.has(course.id)) {
+				map.set(course.id, course);
+			}
 		});
 		subscriptions.forEach((sub) => {
 			if (!map.has(sub.id)) {

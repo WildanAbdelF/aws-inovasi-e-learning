@@ -9,6 +9,8 @@ import {
   addPurchase,
   getPurchases,
   getSubscriptionByCourseId,
+  hasLifetimeAccess,
+  getUser,
 } from "@/lib/localStorageHelper";
 import type { CourseSubscription } from "@/lib/localStorageHelper";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +25,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
   const [open, setOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [alreadyPurchased, setAlreadyPurchased] = useState(false);
+  const [hasAdminGrantedAccess, setHasAdminGrantedAccess] = useState(false);
   const [activeSubscription, setActiveSubscription] = useState<CourseSubscription | null>(null);
   const [checkoutMode, setCheckoutMode] = useState<"lifetime" | "subscription" | null>(null);
   const [successType, setSuccessType] = useState<"lifetime" | "subscription" | null>(null);
@@ -37,6 +40,11 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
   useEffect(() => {
     const list = getPurchases();
     setAlreadyPurchased(list.some((c) => c.id === String(course.id)));
+    // Check for admin-granted lifetime access
+    const currentUser = getUser();
+    if (currentUser) {
+      setHasAdminGrantedAccess(hasLifetimeAccess(currentUser.email, String(course.id)));
+    }
   }, [course.id]);
 
   useEffect(() => {
@@ -210,9 +218,9 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
               <div className="text-2xl font-bold">Rp {course.price.toLocaleString("id-ID")}</div>
               <div className="text-xs text-neutral-500 flex items-center gap-2">
                 <span>Akses Lifetime</span>
-                {alreadyPurchased && (
+                {(alreadyPurchased || hasAdminGrantedAccess) && (
                   <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold px-2 py-0.5">
-                    Sudah dibeli
+                    {hasAdminGrantedAccess && !alreadyPurchased ? "Akses Diberikan" : "Sudah dibeli"}
                   </span>
                 )}
               </div>
@@ -224,7 +232,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
             </div>
 
             <div className="flex flex-col gap-3">
-              {alreadyPurchased && (
+              {(alreadyPurchased || hasAdminGrantedAccess) && (
                 <button
                   className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-semibold transition hover:scale-102"
                   onClick={handleContinueLearning}
@@ -233,7 +241,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
                 </button>
               )}
 
-              {!alreadyPurchased && hasMonthlyAccess && (
+              {!alreadyPurchased && !hasAdminGrantedAccess && hasMonthlyAccess && (
                 <>
                   <button
                     className="w-full bg-blue-600 text-white py-3 rounded-lg hover:scale-102 transition"
@@ -257,7 +265,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
                 </>
               )}
 
-              {!alreadyPurchased && !hasMonthlyAccess && (
+              {!alreadyPurchased && !hasAdminGrantedAccess && !hasMonthlyAccess && (
                 <>
                   <button
                     className="w-full bg-red-600 font-semibold text-white py-3 rounded-lg hover:bg-red-700 hover:scale-102 transition"

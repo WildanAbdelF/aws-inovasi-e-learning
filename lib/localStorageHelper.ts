@@ -12,6 +12,8 @@ export type StoredUser = {
 	email: string;
 	password: string;
 	role: "admin" | "user";
+	subscriptionStatus?: "active" | "inactive" | "pending";
+	lifetimeCourses?: { id: string; title: string }[];
 };
 
 export function isBrowser() {
@@ -55,6 +57,55 @@ export function updateRegisteredUser(email: string, updatedData: Partial<StoredU
 	users[index] = { ...users[index], ...updatedData };
 	window.localStorage.setItem(LS_KEYS.REGISTERED_USERS, JSON.stringify(users));
 	return true;
+}
+
+// === LIFETIME COURSE ACCESS MANAGEMENT ===
+
+export function addLifetimeCourseToUser(userEmail: string, course: { id: string; title: string }): boolean {
+	if (!isBrowser()) return false;
+	const users = getRegisteredUsers();
+	const index = users.findIndex((u) => u.email === userEmail);
+	if (index === -1) return false;
+	
+	const user = users[index];
+	const currentCourses = user.lifetimeCourses || [];
+	
+	// Check if course already exists
+	if (currentCourses.some((c) => c.id === course.id)) return false;
+	
+	users[index] = {
+		...user,
+		lifetimeCourses: [...currentCourses, course],
+	};
+	window.localStorage.setItem(LS_KEYS.REGISTERED_USERS, JSON.stringify(users));
+	return true;
+}
+
+export function removeLifetimeCourseFromUser(userEmail: string, courseId: string): boolean {
+	if (!isBrowser()) return false;
+	const users = getRegisteredUsers();
+	const index = users.findIndex((u) => u.email === userEmail);
+	if (index === -1) return false;
+	
+	const user = users[index];
+	const currentCourses = user.lifetimeCourses || [];
+	
+	users[index] = {
+		...user,
+		lifetimeCourses: currentCourses.filter((c) => c.id !== courseId),
+	};
+	window.localStorage.setItem(LS_KEYS.REGISTERED_USERS, JSON.stringify(users));
+	return true;
+}
+
+export function getUserLifetimeCourses(userEmail: string): { id: string; title: string }[] {
+	const user = findRegisteredUser(userEmail);
+	return user?.lifetimeCourses || [];
+}
+
+export function hasLifetimeAccess(userEmail: string, courseId: string): boolean {
+	const courses = getUserLifetimeCourses(userEmail);
+	return courses.some((c) => c.id === courseId);
 }
 
 // === CURRENT SESSION (Cleared on logout) ===
