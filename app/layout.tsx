@@ -24,8 +24,8 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
-      <body className={`${montserrat.variable} ${poppins.variable} font-poppins bg-white text-neutral-900`}>
+    <html lang="id" suppressHydrationWarning>
+      <body className={`${montserrat.variable} ${poppins.variable} font-poppins bg-white text-neutral-900`} suppressHydrationWarning>
         <AuthProvider>
           <AOSProvider>
             <Navbar />

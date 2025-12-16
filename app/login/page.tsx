@@ -134,7 +134,7 @@ export default function LoginPage() {
             />
 
             <div className="flex justify-end">
-              <a className="text-sm text-blue-600" href="#">Lupa Kata Sandi?</a>
+              <a className="text-sm text-blue-600 hover:underline" href="/forgot-password">Lupa Kata Sandi?</a>
             </div>
 
             <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">Login</Button>
