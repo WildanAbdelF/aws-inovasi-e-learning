@@ -152,7 +152,7 @@ export default function RegisterPage() {
               <label htmlFor="terms" className="text-sm">Saya setuju dengan <span className="text-red-600">Syarat & Ketentuan</span></label>
             </div>
 
-            <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">Daftar</Button>
+            <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 hover:scale-105 transition-transform">Daftar</Button>
 
             <div className="flex items-center gap-3">
               <div className="h-px bg-muted-foreground flex-1" />
@@ -160,7 +160,7 @@ export default function RegisterPage() {
               <div className="h-px bg-muted-foreground flex-1" />
             </div>
 
-            <Button variant="outline" className="w-full">Daftar dengan Google</Button>
+            <Button variant="outline" className="w-full hover:scale-105 transition-transform border-red-500 text-red-600 hover:bg-red-500 hover:text-white">Daftar dengan Google</Button>
 
             <p className="text-center text-sm text-muted-foreground">
               Sudah punya akun? <a className="text-red-600" href="/login">Login di sini</a>

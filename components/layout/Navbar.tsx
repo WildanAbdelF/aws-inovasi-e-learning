@@ -132,10 +132,10 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Button asChild variant="outline" size="sm" className="border-red-400">
+              <Button asChild variant="outline" size="sm" className="border-red-500 hover:bg-red-500 hover:text-white transition-colors hover:scale-105">
                 <Link href="/login">Login</Link>
               </Button>
-              <Button asChild size="sm" className="bg-red-600 hover:bg-red-700">
+              <Button asChild size="sm" className="bg-red-600 hover:scale-105 transition-transform hover:bg-red-700">
                 <Link href="/register">Daftar</Link>
               </Button>
             </div>
@@ -156,7 +156,7 @@ export default function Navbar() {
             className={
               isLoggedIn
                 ? "text-blue-600 font-medium"
-                : "text-neutral-700 hover:text-neutral-900"
+                : "text-neutral-700 hover:scale-105 transition-transform hover:text-neutral-900"
             }
           >
             Dashboard
@@ -164,7 +164,7 @@ export default function Navbar() {
           <Link
             href="/katalog"
             onClick={() => setOpen(false)}
-            className="text-neutral-700 hover:text-neutral-900"
+            className="text-neutral-700 hover:text-neutral-900 hover:scale-105 transition-transform"
           >
             Katalog Kursus
           </Link>

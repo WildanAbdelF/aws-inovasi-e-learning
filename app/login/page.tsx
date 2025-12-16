@@ -137,7 +137,7 @@ export default function LoginPage() {
               <a className="text-sm text-blue-600 hover:underline" href="/forgot-password">Lupa Kata Sandi?</a>
             </div>
 
-            <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">Login</Button>
+            <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 hover:scale-105 transition-transform">Login</Button>
 
             <div className="flex items-center gap-3">
               <div className="h-px bg-muted-foreground flex-1" />
@@ -145,7 +145,7 @@ export default function LoginPage() {
               <div className="h-px bg-muted-foreground flex-1" />
             </div>
 
-            <Button variant="outline" className="w-full">Login dengan Google</Button>
+            <Button variant="outline" className="w-full hover:scale-105 transition-transform border-red-500 text-red-600 hover:bg-red-500 hover:text-white">Login dengan Google</Button>
 
             <p className="text-center text-sm text-muted-foreground">
               Belum punya akun? <a className="text-red-600" href="/register">Daftar di sini</a>
