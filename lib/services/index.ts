@@ -12,5 +12,8 @@
  * - certificate.service.ts : Certificate generation & storage
  */
 
-// Placeholder exports - akan diisi saat migrasi ke Supabase
-export {};
+// Quiz Generator Service
+export {
+  generateQuizFromMaterial,
+  generateQuizForModule,
+} from "./quizGenerator";

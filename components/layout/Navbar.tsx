@@ -24,13 +24,13 @@ export default function Navbar() {
               (isLoggedIn ? "bg-blue-600" : "bg-red-600")
             }
           >
-            <span>L</span>
+            <span>A</span>
           </div>
           <Link
             href="/"
             className="text-base font-semibold tracking-tight text-neutral-900"
           >
-            LMS Platform
+            AWS E-Learning
           </Link>
         </div>
 

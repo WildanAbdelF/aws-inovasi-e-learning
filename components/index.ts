@@ -26,6 +26,9 @@ export {
 // Certificate
 export { CertificateModal } from "./certificate";
 
+// Quiz
+export { AutoQuizGenerator } from "./quiz";
+
 // Providers
 export { AuthProvider, useAuth, AOSProvider } from "./providers";
 

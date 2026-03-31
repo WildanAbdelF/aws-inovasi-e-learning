@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
               <path d="M12 2L3 7v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5z" />
             </svg>
           </div>
-          <p className="text-sm text-red-600 font-medium mb-1">LMS Platform</p>
+          <p className="text-sm text-red-600 font-medium mb-1">AWS E-Learning</p>
           <h1 className="text-2xl font-extrabold text-neutral-900 mb-2">Buat Kata Sandi Baru</h1>
           <p className="text-sm text-neutral-500">
             Kata sandi harus memiliki setidaknya 8 karakter.

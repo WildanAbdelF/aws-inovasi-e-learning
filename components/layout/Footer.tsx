@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-6">
         
         <div>
-          <h3 className="font-semibold">LMS Platform</h3>
+          <h3 className="font-semibold">AWS E-Learning</h3>
           <p className="text-sm text-neutral-600">
             Belajar tanpa batas.
           </p>
@@ -32,7 +32,7 @@ export default function Footer() {
       </div>
 
       <p className="text-center text-sm text-neutral-500 mt-6">
-        © 2024 LMS Platform. All rights reserved.
+        © 2024 AWS E-Learning. All rights reserved.
       </p>
     </footer>
   );
