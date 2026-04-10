@@ -23,10 +23,16 @@ Use SQL script in [supabase/schema.sql](supabase/schema.sql) from Supabase SQL E
 - price (numeric)
 - image (text)
 - description (text, nullable)
-- curriculum (jsonb, nullable)
-- modules (jsonb, nullable)
+- curriculum (jsonb, default [])
+- modules (jsonb, default [])
 - created_at (timestamp, default now())
 - updated_at (timestamp, default now())
+
+## Auth Notes
+
+- Login/register now use API routes (`/api/auth/login`, `/api/auth/register`) backed by Supabase Auth.
+- Session token is stored in HttpOnly cookies and can be read through `/api/auth/me`.
+- Make sure `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `SUPABASE_PUBLISHABLE_KEY`) is configured.
 
 ### modules
 - id (text, primary key)

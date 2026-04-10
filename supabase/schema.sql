@@ -33,11 +33,18 @@ create table if not exists public.courses (
   price numeric not null default 0,
   image text not null,
   description text,
-  curriculum jsonb,
-  modules jsonb,
+  curriculum jsonb not null default '[]'::jsonb,
+  modules jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Backfill old rows that still store null arrays.
+update public.courses
+set
+  curriculum = coalesce(curriculum, '[]'::jsonb),
+  modules = coalesce(modules, '[]'::jsonb)
+where curriculum is null or modules is null;
 
 -- Modules (normalized table, optional for later migration from jsonb)
 create table if not exists public.modules (

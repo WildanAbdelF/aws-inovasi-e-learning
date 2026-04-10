@@ -36,9 +36,27 @@ function toDbCourse(course: Course) {
     price: course.price,
     image: course.image,
     description: course.description ?? null,
-    curriculum: course.curriculum ?? null,
-    modules: course.modules ?? null,
+    curriculum: Array.isArray(course.curriculum) ? course.curriculum : [],
+    modules: Array.isArray(course.modules) ? course.modules : [],
     updated_at: new Date().toISOString(),
+  };
+}
+
+function mapDbCourse(row: any): Course {
+  return {
+    id: typeof row?.id === "string" ? row.id : "",
+    title: typeof row?.title === "string" ? row.title : "",
+    author: typeof row?.author === "string" ? row.author : "",
+    price: Number.isFinite(row?.price) ? Number(row.price) : 0,
+    image: typeof row?.image === "string" ? row.image : "",
+    description:
+      typeof row?.description === "string" && row.description.trim()
+        ? row.description
+        : undefined,
+    curriculum: Array.isArray(row?.curriculum)
+      ? row.curriculum.filter((c: unknown) => typeof c === "string")
+      : [],
+    modules: Array.isArray(row?.modules) ? row.modules : [],
   };
 }
 
@@ -60,7 +78,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data: data ?? [] });
+  return NextResponse.json({ data: (data ?? []).map(mapDbCourse) });
 }
 
 export async function POST(request: Request) {
@@ -92,5 +110,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data }, { status: 201 });
+  return NextResponse.json({ data: mapDbCourse(data) }, { status: 201 });
 }

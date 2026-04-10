@@ -25,3 +25,13 @@ export {
   updateCourse,
   deleteCourse,
 } from "./courseApi";
+
+export {
+  getMyProfile,
+  updateMyProfile,
+  listUsersForAdmin,
+  updateUserAsAdmin,
+  requestPasswordReset,
+  getPasswordResetSession,
+  resetPasswordWithSession,
+} from "./userApi";

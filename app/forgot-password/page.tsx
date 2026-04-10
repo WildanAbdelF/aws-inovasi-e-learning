@@ -3,37 +3,28 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { findRegisteredUser } from "@/lib/localStorageHelper";
+import { requestPasswordReset } from "@/lib/services/userApi";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Check if email exists in registered users
-    const user = findRegisteredUser(email);
-    
-    if (!user) {
-      window.alert("Email tidak terdaftar. Silakan periksa kembali.");
+    try {
+      await requestPasswordReset(email);
+      router.push(`/forgot-password/sent?email=${encodeURIComponent(email)}`);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Gagal memproses permintaan reset password.";
+      window.alert(message);
       setIsSubmitting(false);
-      return;
     }
-
-    // For demo purposes, store the email for reset and redirect
-    // In production, this would send an actual email
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("lms_reset_email", email);
-      // Generate a simple token for demo
-      const token = btoa(email + "_" + Date.now());
-      window.localStorage.setItem("lms_reset_token", token);
-    }
-
-    // Redirect to confirmation page
-    router.push(`/forgot-password/sent?email=${encodeURIComponent(email)}`);
   };
 
   return (

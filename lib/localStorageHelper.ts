@@ -8,6 +8,7 @@ export const LS_KEYS = {
 };
 
 export type StoredUser = {
+	id?: string;
 	name: string;
 	email: string;
 	password: string;

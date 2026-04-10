@@ -7,6 +7,11 @@ import {
 	logout as logoutHelper,
 	StoredUser,
 } from "@/lib/localStorageHelper";
+import {
+	fetchCurrentUser,
+	logoutWithApi,
+	type ApiAuthUser,
+} from "@/lib/services/authApi";
 
 type AuthContextValue = {
 	user: StoredUser | null;
@@ -22,6 +27,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		const existing = getUser();
 		if (existing) setUser(existing);
+
+		const syncUserFromApi = async () => {
+			try {
+				const apiUser = await fetchCurrentUser();
+				if (!apiUser) return;
+
+				const normalized = mapApiUserToStoredUser(apiUser);
+				saveUser(normalized);
+				setUser(normalized);
+			} catch {
+				// Keep local session fallback when API check fails.
+			}
+		};
+
+		void syncUserFromApi();
 	}, []);
 
 	const login = (u: StoredUser) => {
@@ -30,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	};
 
 	const logout = () => {
+		void logoutWithApi().catch(() => undefined);
 		logoutHelper();
 		setUser(null);
 	};
@@ -39,6 +60,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			{children}
 		</AuthContext.Provider>
 	);
+}
+
+function mapApiUserToStoredUser(user: ApiAuthUser): StoredUser {
+	return {
+		id: user.id,
+		name: user.name,
+		email: user.email,
+		password: "",
+		role: user.role,
+	};
 }
 
 export function useAuth() {

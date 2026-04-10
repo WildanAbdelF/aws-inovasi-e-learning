@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { findRegisteredUser, saveUser, StoredUser } from "@/lib/localStorageHelper";
+import { StoredUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers";
+import { loginWithApi } from "@/lib/services/authApi";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,35 +29,30 @@ export default function LoginPage() {
     },
   });
 
-  function onSubmit(values: any) {
-    // Find user from registered users list (persistent)
-    const stored = findRegisteredUser(values.email);
+  async function onSubmit(values: any) {
+    try {
+      const apiUser = await loginWithApi(values.email, values.password);
 
-    if (!stored) {
-      window.alert("Akun belum terdaftar. Silakan daftar terlebih dahulu.");
-      return;
-    }
+      const user: StoredUser = {
+        id: apiUser.id,
+        name: apiUser.name,
+        email: apiUser.email,
+        password: "",
+        role: apiUser.role,
+      };
 
-    if (stored.password !== values.password) {
-      window.alert("Email atau password salah.");
-      return;
-    }
+      login(user);
 
-    // Set session in context + save current user
-    const user: StoredUser = {
-      name: stored.name,
-      email: stored.email,
-      password: stored.password,
-      role: stored.role || (stored.email === "admin@example.com" ? "admin" : "user"),
-    };
-    saveUser(user);
-    login(user);
-
-    window.alert("Login sukses");
-    if (user.role === "admin") {
-      router.push("/admin");
-    } else {
-      router.push("/dashboard");
+      window.alert("Login sukses");
+      if (user.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Email atau password salah.";
+      window.alert(message);
     }
   }
 

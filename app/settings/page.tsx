@@ -3,17 +3,34 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser, saveUser, findRegisteredUser, updateRegisteredUser, StoredUser, getPurchases, getCertificates, Certificate } from "@/lib/localStorageHelper";
+import {
+  StoredUser,
+  getPurchases,
+  getCertificates,
+  Certificate,
+} from "@/lib/localStorageHelper";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/providers/AuthProvider";
 import CertificateModal from "@/components/certificate/CertificateModal";
+import { getMyProfile, updateMyProfile } from "@/lib/services/userApi";
+import type { ApiUserProfile } from "@/lib/serverAuth";
 
 type TabType = "profil" | "langganan" | "lifetime" | "riwayat" | "sertifikat";
 
+function mapApiProfileToStoredUser(profile: ApiUserProfile): StoredUser {
+  return {
+    id: profile.id,
+    name: profile.name,
+    email: profile.email,
+    password: "",
+    role: profile.role,
+  };
+}
+
 export default function SettingsPage() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user: authUser, login, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<StoredUser | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("profil");
@@ -33,70 +50,80 @@ export default function SettingsPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    const stored = getUser();
-    if (!stored) {
-      router.replace("/login");
-      return;
-    }
-    // If admin, redirect to admin dashboard
-    if (stored.role === "admin") {
-      router.replace("/admin/dashboard");
-      return;
-    }
-    setUser(stored);
-    setFormData((prev) => ({
-      ...prev,
-      name: stored.name,
-      email: stored.email,
-    }));
-    setPurchases(getPurchases());
-    setCertificates(getCertificates(stored.email));
-    setLoading(false);
-  }, [router]);
-
-  const handleSaveProfile = () => {
-    if (!user) return;
-
-    // Validate current password if changing password
-    if (formData.newPassword) {
-      if (formData.currentPassword !== user.password) {
-        window.alert("Kata sandi saat ini tidak sesuai.");
+    const loadProfile = async () => {
+      if (!authUser) {
+        router.replace("/login");
         return;
       }
-      if (formData.newPassword !== formData.confirmPassword) {
-        window.alert("Konfirmasi kata sandi baru tidak sesuai.");
-        return;
-      }
-      if (formData.newPassword.length < 6) {
-        window.alert("Kata sandi baru minimal 6 karakter.");
-        return;
-      }
-    }
 
-    const updatedUser: StoredUser = {
-      ...user,
-      name: formData.name,
-      password: formData.newPassword || user.password,
+      if (authUser.role === "admin") {
+        router.replace("/admin/dashboard");
+        return;
+      }
+
+      try {
+        const profile = await getMyProfile();
+        const normalized = mapApiProfileToStoredUser(profile);
+
+        setUser(normalized);
+        login(normalized);
+        setFormData((prev) => ({
+          ...prev,
+          name: normalized.name,
+          email: normalized.email,
+        }));
+        setPurchases(getPurchases());
+        setCertificates(getCertificates(normalized.email));
+      } catch {
+        setUser(authUser);
+        setFormData((prev) => ({
+          ...prev,
+          name: authUser.name,
+          email: authUser.email,
+        }));
+        setPurchases(getPurchases());
+        setCertificates(getCertificates(authUser.email));
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Update both session and registered users
-    saveUser(updatedUser);
-    updateRegisteredUser(user.email, {
-      name: formData.name,
-      password: formData.newPassword || user.password,
-    });
-    
-    setUser(updatedUser);
-    window.alert("Perubahan berhasil disimpan.");
-    setFormData((prev) => ({
-      ...prev,
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    }));
-    setShowCurrentPassword(false);
-    setShowNewPassword(false);
-    setShowConfirmPassword(false);
+    void loadProfile();
+  }, [authUser, router]);
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+
+    try {
+      const updated = await updateMyProfile({
+        name: formData.name,
+        currentPassword: formData.currentPassword || undefined,
+        newPassword: formData.newPassword || undefined,
+        confirmPassword: formData.confirmPassword || undefined,
+      });
+
+      const updatedUser = mapApiProfileToStoredUser(updated);
+      setUser(updatedUser);
+      login(updatedUser);
+      window.alert("Perubahan berhasil disimpan.");
+      setFormData((prev) => ({
+        ...prev,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Gagal menyimpan perubahan profil.";
+      window.alert(message);
+    }
   };
 
   const tabs: { key: TabType; label: string }[] = [

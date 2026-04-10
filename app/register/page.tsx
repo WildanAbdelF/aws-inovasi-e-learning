@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { registerUser, saveUser, StoredUser } from "@/lib/localStorageHelper";
+import { StoredUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers";
+import { registerWithApi } from "@/lib/services/authApi";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -30,32 +31,45 @@ export default function RegisterPage() {
     },
   });
 
-  function onSubmit(values: any) {
-    const user: StoredUser = {
-      name: values.name,
-      email: values.email,
-      password: values.password,
-      role: values.email === "admin@example.com" ? "admin" : "user",
-    };
+  async function onSubmit(values: any) {
+    try {
+      const { user: apiUser, message, sessionEstablished } = await registerWithApi(
+        values.name,
+        values.email,
+        values.password
+      );
 
-    // Register user to persistent storage
-    const success = registerUser(user);
-    if (!success) {
-      window.alert("Email sudah terdaftar. Silakan gunakan email lain atau login.");
-      return;
-    }
+      const user: StoredUser = {
+        id: apiUser.id,
+        name: apiUser.name,
+        email: apiUser.email,
+        password: "",
+        role: apiUser.role,
+      };
 
-    // Save to current session
-    saveUser(user);
+      if (!sessionEstablished) {
+        window.alert(
+          message ??
+            "Pendaftaran berhasil. Silakan verifikasi email Anda terlebih dahulu, lalu login."
+        );
+        router.push("/login");
+        return;
+      }
 
-    // Set session in context so navbar updates immediately
-    login(user);
+      login(user);
 
-    window.alert("Pendaftaran berhasil. Anda sudah otomatis login.");
-    if (user.role === "admin") {
-      router.push("/admin");
-    } else {
-      router.push("/dashboard");
+      window.alert(message ?? "Pendaftaran berhasil. Anda sudah otomatis login.");
+      if (user.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Pendaftaran gagal. Silakan coba lagi.";
+      window.alert(message);
     }
   }
 

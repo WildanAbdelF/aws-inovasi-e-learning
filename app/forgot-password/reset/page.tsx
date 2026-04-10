@@ -3,11 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { findRegisteredUser, updateRegisteredUser } from "@/lib/localStorageHelper";
+import {
+  getPasswordResetSession,
+  resetPasswordWithSession,
+} from "@/lib/services/userApi";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [maskedEmail, setMaskedEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -16,28 +19,30 @@ export default function ResetPasswordPage() {
   const [isValidToken, setIsValidToken] = useState(false);
 
   useEffect(() => {
-    // Check if there's a valid reset token
-    if (typeof window !== "undefined") {
-      const storedEmail = window.localStorage.getItem("lms_reset_email");
-      const storedToken = window.localStorage.getItem("lms_reset_token");
-      
-      if (storedEmail && storedToken) {
-        setEmail(storedEmail);
+    const validateResetSession = async () => {
+      try {
+        const session = await getPasswordResetSession();
+        if (!session.valid) {
+          router.replace("/forgot-password");
+          return;
+        }
+
+        setMaskedEmail(session.maskedEmail ?? "");
         setIsValidToken(true);
-      } else {
-        // No valid token, redirect to forgot password
+      } catch {
         router.replace("/forgot-password");
       }
-    }
+    };
+
+    void validateResetSession();
   }, [router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Validate password length
-    if (password.length < 8) {
-      window.alert("Kata sandi harus memiliki setidaknya 8 karakter.");
+    if (password.length < 6) {
+      window.alert("Kata sandi harus memiliki setidaknya 6 karakter.");
       setIsSubmitting(false);
       return;
     }
@@ -49,26 +54,16 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    // Find and update user
-    const user = findRegisteredUser(email);
-    if (!user) {
-      window.alert("Terjadi kesalahan. Silakan coba lagi.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Update password
-    const success = updateRegisteredUser(email, { password });
-    
-    if (success) {
-      // Clear reset tokens
-      window.localStorage.removeItem("lms_reset_email");
-      window.localStorage.removeItem("lms_reset_token");
-      
+    try {
+      await resetPasswordWithSession(password, confirmPassword);
       window.alert("Kata sandi berhasil diubah! Silakan login dengan kata sandi baru Anda.");
       router.push("/login");
-    } else {
-      window.alert("Gagal mengubah kata sandi. Silakan coba lagi.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Gagal mengubah kata sandi. Silakan coba lagi.";
+      window.alert(message);
       setIsSubmitting(false);
     }
   };
@@ -94,8 +89,11 @@ export default function ResetPasswordPage() {
           <p className="text-sm text-red-600 font-medium mb-1">AWS E-Learning</p>
           <h1 className="text-2xl font-extrabold text-neutral-900 mb-2">Buat Kata Sandi Baru</h1>
           <p className="text-sm text-neutral-500">
-            Kata sandi harus memiliki setidaknya 8 karakter.
+            Kata sandi harus memiliki setidaknya 6 karakter.
           </p>
+          {maskedEmail ? (
+            <p className="text-xs text-neutral-500 mt-2">Akun: {maskedEmail}</p>
+          ) : null}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5" data-aos="fade-up" data-aos-duration="500" data-aos-delay="100">
@@ -110,7 +108,7 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Masukkan kata sandi baru Anda"
                 required
-                minLength={8}
+                minLength={6}
                 className="w-full px-4 py-3 pr-12 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
               />
               <button
@@ -143,7 +141,7 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Masukkan kembali kata sandi baru Anda"
                 required
-                minLength={8}
+                minLength={6}
                 className="w-full px-4 py-3 pr-12 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
               />
               <button
