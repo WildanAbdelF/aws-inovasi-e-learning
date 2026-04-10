@@ -1,16 +1,7 @@
 import { NextRequest } from "next/server";
 import { AUTH_COOKIE_KEYS } from "@/lib/authCookies";
 import { getSupabaseAdmin, getSupabaseAuthClient } from "@/lib/supabase";
-
-export type UserRole = "admin" | "user";
-
-export type ApiUserProfile = {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  createdAt?: string;
-};
+import type { ApiUserProfile, UserRole } from "@/types/user";
 
 export type AuthenticatedProfileResult =
   | {

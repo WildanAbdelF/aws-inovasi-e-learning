@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
-
-const RESET_EMAIL_COOKIE_KEY = "lms_password_reset_email";
+import { getSupabaseAuthClient } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const supabaseAdmin = getSupabaseAdmin();
-  if (!supabaseAdmin) {
+  const supabaseAuthClient = getSupabaseAuthClient();
+  if (!supabaseAuthClient) {
     return NextResponse.json(
-      { error: "Missing Supabase credentials." },
+      { error: "Supabase auth is not configured." },
       { status: 500 }
     );
   }
@@ -21,23 +19,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email is required." }, { status: 400 });
   }
 
-  const { data: user } = await supabaseAdmin
-    .from("users")
-    .select("id, email")
-    .eq("email", email)
-    .maybeSingle();
+  const originHeader = request.headers.get("origin");
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (typeof originHeader === "string" && originHeader.trim() ? originHeader : "");
 
-  const response = NextResponse.json({ success: true });
+  const redirectTo = appUrl
+    ? `${appUrl.replace(/\/$/, "")}/forgot-password/reset`
+    : undefined;
 
-  if (user?.email) {
-    response.cookies.set(RESET_EMAIL_COOKIE_KEY, user.email, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 15,
-    });
-  }
+  await supabaseAuthClient.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  }).catch(() => undefined);
 
-  return response;
+  // Always return success to avoid account enumeration leaks.
+  return NextResponse.json({ success: true });
 }

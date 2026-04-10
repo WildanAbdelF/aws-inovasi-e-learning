@@ -1,4 +1,9 @@
-import type { ApiUserProfile, UserRole } from "@/lib/serverAuth";
+import type {
+  ApiUserProfile,
+  UserRole,
+  UserCourseAccess,
+  UserCertificate,
+} from "@/types/user";
 
 export type AdminUserUpdatePayload = {
   name?: string;
@@ -15,6 +20,11 @@ export type MyProfileUpdatePayload = {
 export type PasswordResetSession = {
   valid: boolean;
   maskedEmail?: string;
+};
+
+export type CourseAccessPayload = {
+  courseId: string;
+  accessType: "lifetime" | "subscription";
 };
 
 type ApiResponse<T> = {
@@ -115,34 +125,68 @@ export async function requestPasswordReset(email: string): Promise<void> {
   }
 }
 
-export async function getPasswordResetSession(): Promise<PasswordResetSession> {
-  const response = await fetch("/api/auth/reset-password", {
+export async function listMyCourseAccesses(): Promise<UserCourseAccess[]> {
+  const response = await fetch("/api/users/me/courses", {
     method: "GET",
     cache: "no-store",
     credentials: "include",
   });
 
   if (!response.ok) {
-    throw new Error(await readError(response, "Failed to validate reset session."));
+    throw new Error(await readError(response, "Failed to fetch course accesses."));
   }
 
-  const payload = (await response.json()) as ApiResponse<PasswordResetSession>;
+  const payload = (await response.json()) as ApiResponse<UserCourseAccess[]>;
   return payload.data;
 }
 
-export async function resetPasswordWithSession(
-  password: string,
-  confirmPassword: string
-): Promise<void> {
-  const response = await fetch("/api/auth/reset-password", {
+export async function createMyCourseAccess(
+  payload: CourseAccessPayload
+): Promise<UserCourseAccess> {
+  const response = await fetch("/api/users/me/courses", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password, confirmPassword }),
+    body: JSON.stringify(payload),
     cache: "no-store",
     credentials: "include",
   });
 
   if (!response.ok) {
-    throw new Error(await readError(response, "Failed to reset password."));
+    throw new Error(await readError(response, "Failed to create course access."));
   }
+
+  const body = (await response.json()) as ApiResponse<UserCourseAccess>;
+  return body.data;
+}
+
+export async function listMyCertificates(): Promise<UserCertificate[]> {
+  const response = await fetch("/api/users/me/certificates", {
+    method: "GET",
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, "Failed to fetch certificates."));
+  }
+
+  const payload = (await response.json()) as ApiResponse<UserCertificate[]>;
+  return payload.data;
+}
+
+export async function issueMyCertificate(courseId: string): Promise<UserCertificate> {
+  const response = await fetch("/api/users/me/certificates", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ courseId }),
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, "Failed to issue certificate."));
+  }
+
+  const payload = (await response.json()) as ApiResponse<UserCertificate>;
+  return payload.data;
 }

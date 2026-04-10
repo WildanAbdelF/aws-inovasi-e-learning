@@ -3,20 +3,28 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  StoredUser,
-  getPurchases,
-  getCertificates,
-  Certificate,
-} from "@/lib/localStorageHelper";
+import { StoredUser, Certificate } from "@/lib/localStorageHelper";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/providers/AuthProvider";
 import CertificateModal from "@/components/certificate/CertificateModal";
-import { getMyProfile, updateMyProfile } from "@/lib/services/userApi";
-import type { ApiUserProfile } from "@/lib/serverAuth";
+import {
+  getMyProfile,
+  updateMyProfile,
+  listMyCourseAccesses,
+  listMyCertificates,
+} from "@/lib/services/userApi";
+import type { ApiUserProfile, UserCourseAccess, UserCertificate } from "@/types/user";
 
 type TabType = "profil" | "langganan" | "lifetime" | "riwayat" | "sertifikat";
+
+type PurchaseEntry = {
+  id: string;
+  title: string;
+  price: number | null;
+  accessType: "lifetime" | "subscription";
+  expiresAt?: string | null;
+};
 
 function mapApiProfileToStoredUser(profile: ApiUserProfile): StoredUser {
   return {
@@ -25,6 +33,28 @@ function mapApiProfileToStoredUser(profile: ApiUserProfile): StoredUser {
     email: profile.email,
     password: "",
     role: profile.role,
+  };
+}
+
+function mapAccessToPurchase(access: UserCourseAccess): PurchaseEntry {
+  return {
+    id: access.courseId,
+    title: access.title,
+    price: access.pricePaid ?? access.price,
+    accessType: access.accessType,
+    expiresAt: access.expiresAt ?? null,
+  };
+}
+
+function mapApiCertificate(cert: UserCertificate): Certificate {
+  return {
+    id: cert.id,
+    courseId: cert.courseId,
+    courseTitle: cert.courseTitle,
+    userName: cert.userName,
+    userEmail: cert.userEmail,
+    instructorName: cert.instructorName,
+    completedAt: cert.completedAt,
   };
 }
 
@@ -41,7 +71,7 @@ export default function SettingsPage() {
     newPassword: "",
     confirmPassword: "",
   });
-  const [purchases, setPurchases] = useState<any[]>([]);
+  const [purchases, setPurchases] = useState<PurchaseEntry[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [showCertificate, setShowCertificate] = useState(false);
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
@@ -64,6 +94,10 @@ export default function SettingsPage() {
       try {
         const profile = await getMyProfile();
         const normalized = mapApiProfileToStoredUser(profile);
+        const [courseAccesses, certificateRows] = await Promise.all([
+          listMyCourseAccesses(),
+          listMyCertificates(),
+        ]);
 
         setUser(normalized);
         login(normalized);
@@ -72,8 +106,8 @@ export default function SettingsPage() {
           name: normalized.name,
           email: normalized.email,
         }));
-        setPurchases(getPurchases());
-        setCertificates(getCertificates(normalized.email));
+        setPurchases(courseAccesses.map(mapAccessToPurchase));
+        setCertificates(certificateRows.map(mapApiCertificate));
       } catch {
         setUser(authUser);
         setFormData((prev) => ({
@@ -81,8 +115,8 @@ export default function SettingsPage() {
           name: authUser.name,
           email: authUser.email,
         }));
-        setPurchases(getPurchases());
-        setCertificates(getCertificates(authUser.email));
+        setPurchases([]);
+        setCertificates([]);
       } finally {
         setLoading(false);
       }
@@ -133,6 +167,13 @@ export default function SettingsPage() {
     { key: "riwayat", label: "Riwayat Pembayaran" },
     { key: "sertifikat", label: "Sertifikat" },
   ];
+
+  const lifetimePurchases = purchases.filter((item) => item.accessType === "lifetime");
+  const activeSubscriptions = purchases.filter(
+    (item) =>
+      item.accessType === "subscription" &&
+      (!item.expiresAt || new Date(item.expiresAt).getTime() > Date.now())
+  );
 
   if (loading) {
     return (
@@ -347,33 +388,61 @@ export default function SettingsPage() {
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">
                 Status Langganan
               </h2>
-              <div className="bg-neutral-50 rounded-lg p-6 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-neutral-200 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-neutral-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                    />
-                  </svg>
+              {activeSubscriptions.length > 0 ? (
+                <div className="space-y-3">
+                  {activeSubscriptions.map((purchase) => (
+                    <div
+                      key={`${purchase.id}_${purchase.expiresAt}`}
+                      className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium text-neutral-900">{purchase.title}</p>
+                        <p className="text-sm text-neutral-500">
+                          Aktif hingga{" "}
+                          {purchase.expiresAt
+                            ? new Date(purchase.expiresAt).toLocaleDateString("id-ID", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })
+                            : "30 hari"}
+                        </p>
+                      </div>
+                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                        Aktif
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-neutral-600 mb-2">Belum ada langganan aktif</p>
-                <p className="text-sm text-neutral-500 mb-4">
-                  Berlangganan untuk akses ke semua kursus premium
-                </p>
-                <Link
-                  href="/katalog"
-                  className="inline-block px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-                >
-                  Lihat Paket Langganan
-                </Link>
-              </div>
+              ) : (
+                <div className="bg-neutral-50 rounded-lg p-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-neutral-200 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-8 h-8 text-neutral-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-neutral-600 mb-2">Belum ada langganan aktif</p>
+                  <p className="text-sm text-neutral-500 mb-4">
+                    Berlangganan untuk akses ke semua kursus premium
+                  </p>
+                  <Link
+                    href="/katalog"
+                    className="inline-block px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                  >
+                    Lihat Paket Langganan
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
@@ -382,21 +451,23 @@ export default function SettingsPage() {
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">
                 Kursus Lifetime
               </h2>
-              {purchases.length > 0 ? (
+              {lifetimePurchases.length > 0 ? (
                 <div className="space-y-3">
-                  {purchases.map((purchase, index) => (
+                  {lifetimePurchases.map((purchase) => (
                     <div
-                      key={index}
+                      key={purchase.id}
                       className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg"
                     >
                       <div>
                         <p className="font-medium text-neutral-900">{purchase.title}</p>
                         <p className="text-sm text-neutral-500">
-                          Rp {purchase.price?.toLocaleString("id-ID")}
+                          {typeof purchase.price === "number"
+                            ? `Rp ${purchase.price.toLocaleString("id-ID")}`
+                            : "Akses lifetime"}
                         </p>
                       </div>
                       <Link
-                        href={`/learn/${purchase.id}`}
+                        href={`/courses/${purchase.id}`}
                         className="text-sm text-blue-600 hover:underline"
                       >
                         Lanjutkan Belajar →
@@ -443,15 +514,19 @@ export default function SettingsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {purchases.map((purchase, index) => (
-                        <tr key={index} className="border-b">
+                      {purchases.map((purchase) => (
+                        <tr key={`${purchase.id}_${purchase.accessType}`} className="border-b">
                           <td className="py-3">{purchase.title}</td>
                           <td className="py-3">
-                            Rp {purchase.price?.toLocaleString("id-ID")}
+                            {typeof purchase.price === "number"
+                              ? `Rp ${purchase.price.toLocaleString("id-ID")}`
+                              : "-"}
                           </td>
                           <td className="py-3">
                             <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                              Sukses
+                              {purchase.accessType === "subscription"
+                                ? "Langganan"
+                                : "Lifetime"}
                             </span>
                           </td>
                         </tr>

@@ -3,25 +3,43 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Course } from "@/types/course";
-import { getPurchases, getSubscriptionByCourseId } from "@/lib/localStorageHelper";
-import type { CourseSubscription } from "@/lib/localStorageHelper";
 import { useEffect, useState } from "react";
+import { listMyCourseAccesses } from "@/lib/services/userApi";
+import type { UserCourseAccess } from "@/types/user";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export default function CourseCard({ course }: { course: Course }) {
+  const { user } = useAuth();
   const [purchased, setPurchased] = useState(false);
-  const [subscription, setSubscription] = useState<CourseSubscription | null>(null);
+  const [subscription, setSubscription] = useState<UserCourseAccess | null>(null);
 
   useEffect(() => {
-    try {
-      const list = getPurchases();
-      setPurchased(list.some((c) => c.id === String(course.id)));
-      const activeSubscription = getSubscriptionByCourseId(String(course.id));
-      setSubscription(activeSubscription);
-    } catch {
-      setPurchased(false);
-      setSubscription(null);
-    }
-  }, [course.id]);
+    const loadAccess = async () => {
+      if (!user) {
+        setPurchased(false);
+        setSubscription(null);
+        return;
+      }
+
+      try {
+        const accesses = await listMyCourseAccesses();
+        const related = accesses.filter((item) => item.courseId === String(course.id));
+        setPurchased(related.some((item) => item.accessType === "lifetime"));
+        setSubscription(
+          related.find(
+            (item) =>
+              item.accessType === "subscription" &&
+              (!item.expiresAt || new Date(item.expiresAt).getTime() > Date.now())
+          ) ?? null
+        );
+      } catch {
+        setPurchased(false);
+        setSubscription(null);
+      }
+    };
+
+    void loadAccess();
+  }, [course.id, user]);
 
   return (
     <Link href={`/courses/${course.id}`} className="block h-full">

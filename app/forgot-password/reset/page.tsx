@@ -2,11 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  getPasswordResetSession,
-  resetPasswordWithSession,
-} from "@/lib/services/userApi";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -17,24 +13,47 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isValidToken, setIsValidToken] = useState(false);
+  const [accessToken, setAccessToken] = useState("");
+  const [refreshToken, setRefreshToken] = useState("");
+  const [tokenHash, setTokenHash] = useState("");
+  const [authCode, setAuthCode] = useState("");
 
   useEffect(() => {
-    const validateResetSession = async () => {
-      try {
-        const session = await getPasswordResetSession();
-        if (!session.valid) {
-          router.replace("/forgot-password");
-          return;
-        }
+    const parseRecoveryToken = () => {
+      if (typeof window === "undefined") return;
 
-        setMaskedEmail(session.maskedEmail ?? "");
-        setIsValidToken(true);
-      } catch {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const queryParams = new URLSearchParams(window.location.search);
+
+      const parsedAccessToken =
+        hashParams.get("access_token") || queryParams.get("access_token") || "";
+      const parsedRefreshToken =
+        hashParams.get("refresh_token") || queryParams.get("refresh_token") || "";
+      const parsedTokenHash =
+        hashParams.get("token_hash") || queryParams.get("token_hash") || "";
+      const parsedCode = queryParams.get("code") || "";
+      const parsedType = hashParams.get("type") || queryParams.get("type") || "";
+
+      const isRecoveryType = parsedType ? parsedType === "recovery" : true;
+
+      if (!isRecoveryType) {
         router.replace("/forgot-password");
+        return;
       }
+
+      if (!parsedAccessToken && !parsedTokenHash && !parsedCode) {
+        router.replace("/forgot-password");
+        return;
+      }
+
+      setAccessToken(parsedAccessToken);
+      setRefreshToken(parsedRefreshToken);
+      setTokenHash(parsedTokenHash);
+      setAuthCode(parsedCode);
+      setIsValidToken(true);
     };
 
-    void validateResetSession();
+    parseRecoveryToken();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +74,55 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      await resetPasswordWithSession(password, confirmPassword);
+      const supabase = getSupabaseBrowserClient();
+
+      if (tokenHash) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          type: "recovery",
+          token_hash: tokenHash,
+        });
+
+        if (verifyError) {
+          throw verifyError;
+        }
+      } else if (authCode) {
+        const { error: codeError } = await supabase.auth.exchangeCodeForSession(authCode);
+
+        if (codeError) {
+          throw codeError;
+        }
+      } else if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (sessionError) {
+          throw sessionError;
+        }
+      } else {
+        throw new Error("Token reset tidak valid atau sudah kedaluwarsa.");
+      }
+
+      const { data: currentUserData } = await supabase.auth.getUser();
+      const userEmail = currentUserData.user?.email ?? "";
+      if (userEmail) {
+        const [localPart, domain] = userEmail.split("@");
+        if (localPart && domain) {
+          const visible = localPart.slice(0, 2);
+          setMaskedEmail(`${visible}${"*".repeat(Math.max(1, localPart.length - 2))}@${domain}`);
+        }
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      await supabase.auth.signOut();
       window.alert("Kata sandi berhasil diubah! Silakan login dengan kata sandi baru Anda.");
       router.push("/login");
     } catch (error) {

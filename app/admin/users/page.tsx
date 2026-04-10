@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { listUsersForAdmin, updateUserAsAdmin } from "@/lib/services/userApi";
-import type { ApiUserProfile, UserRole } from "@/lib/serverAuth";
+import type { ApiUserProfile, UserRole } from "@/types/user";
 
 type EditingUser = ApiUserProfile;
 

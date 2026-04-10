@@ -5,4 +5,4 @@
  */
 
 export type { Course, CourseModule, CourseModuleContent, QuizQuestion, QuizOption } from "./course";
-export type { User } from "./user";
+export type { ApiUserProfile, UserRole, UserCourseAccess, UserCertificate } from "./user";

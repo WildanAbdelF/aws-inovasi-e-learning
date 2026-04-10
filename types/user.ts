@@ -1,7 +1,31 @@
-// types/user.ts
-export type User = {
-  id: string;        // uuid atau timestamp string
+export type UserRole = "admin" | "user";
+
+export type ApiUserProfile = {
+  id: string;
   name: string;
   email: string;
-  password: string;  // disimpan plain-text hanya untuk demo lokal (jangan di production)
+  role: UserRole;
+  createdAt?: string;
+};
+
+export type UserCourseAccess = {
+  id: string;
+  courseId: string;
+  title: string;
+  price: number | null;
+  pricePaid: number | null;
+  accessType: "lifetime" | "subscription";
+  status: "active" | "completed";
+  expiresAt?: string | null;
+  createdAt?: string;
+};
+
+export type UserCertificate = {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  instructorName: string;
+  userName: string;
+  userEmail: string;
+  completedAt: string;
 };

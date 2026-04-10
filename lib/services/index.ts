@@ -32,6 +32,8 @@ export {
   listUsersForAdmin,
   updateUserAsAdmin,
   requestPasswordReset,
-  getPasswordResetSession,
-  resetPasswordWithSession,
+  listMyCourseAccesses,
+  createMyCourseAccess,
+  listMyCertificates,
+  issueMyCertificate,
 } from "./userApi";

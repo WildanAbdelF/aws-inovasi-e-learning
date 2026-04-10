@@ -1,6 +1,6 @@
 # Supabase Schema (Draft)
 
-This schema maps existing app data to Supabase tables. It is aligned with the current TypeScript models and localStorage usage.
+This schema maps existing app data to Supabase tables. It is aligned with the current TypeScript models and API migration in this repository.
 
 ## Auto Create Tables
 
@@ -27,12 +27,6 @@ Use SQL script in [supabase/schema.sql](supabase/schema.sql) from Supabase SQL E
 - modules (jsonb, default [])
 - created_at (timestamp, default now())
 - updated_at (timestamp, default now())
-
-## Auth Notes
-
-- Login/register now use API routes (`/api/auth/login`, `/api/auth/register`) backed by Supabase Auth.
-- Session token is stored in HttpOnly cookies and can be read through `/api/auth/me`.
-- Make sure `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `SUPABASE_PUBLISHABLE_KEY`) is configured.
 
 ### modules
 - id (text, primary key)
@@ -72,6 +66,9 @@ Use SQL script in [supabase/schema.sql](supabase/schema.sql) from Supabase SQL E
 - course_id (text, references courses.id)
 - status (text, enum: "active" | "completed")
 - progress (numeric)
+- access_type (text, enum: "lifetime" | "subscription")
+- expires_at (timestamp, nullable)
+- price_paid (numeric, nullable)
 - created_at (timestamp, default now())
 - updated_at (timestamp, default now())
 
@@ -89,5 +86,13 @@ Use SQL script in [supabase/schema.sql](supabase/schema.sql) from Supabase SQL E
 - id (text, primary key)
 - user_id (uuid, references users.id)
 - course_id (text, references courses.id)
+- instructor_name (text, nullable)
 - certificate_url (text, nullable)
 - issued_at (timestamp, default now())
+
+## Auth Notes
+
+- Login/register use API routes (`/api/auth/login`, `/api/auth/register`) backed by Supabase Auth.
+- Session token is stored in HttpOnly cookies and can be read through `/api/auth/me`.
+- Forgot password uses Supabase official reset email flow via `/api/auth/forgot-password` with redirect to `/forgot-password/reset`.
+- Ensure `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `SUPABASE_PUBLISHABLE_KEY`) and `NEXT_PUBLIC_APP_URL` are configured.

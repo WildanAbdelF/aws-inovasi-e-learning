@@ -35,17 +35,6 @@ function SentContent() {
             Silakan periksa kotak masuk dan folder spam Anda.
           </p>
 
-          {/* For demo purposes - direct link to reset page */}
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-xs text-blue-700 mb-2">Demo: Klik tombol di bawah untuk melanjutkan reset password</p>
-            <Link 
-              href="/forgot-password/reset"
-              className="inline-block w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 font-medium transition text-sm"
-            >
-              Buka Halaman Reset Password
-            </Link>
-          </div>
-
           <Link 
             href="/login"
             className="inline-block w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-semibold transition"

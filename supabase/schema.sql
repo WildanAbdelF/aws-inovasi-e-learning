@@ -91,6 +91,9 @@ create table if not exists public.user_courses (
   course_id text not null references public.courses(id) on delete cascade,
   status text not null check (status in ('active', 'completed')),
   progress numeric not null default 0,
+  access_type text not null default 'lifetime' check (access_type in ('lifetime', 'subscription')),
+  expires_at timestamptz,
+  price_paid numeric,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, course_id)
@@ -114,9 +117,38 @@ create table if not exists public.certificates (
   id text primary key,
   user_id uuid not null references public.users(id) on delete cascade,
   course_id text not null references public.courses(id) on delete cascade,
+  instructor_name text,
   certificate_url text,
-  issued_at timestamptz not null default now()
+  issued_at timestamptz not null default now(),
+  unique (user_id, course_id)
 );
+
+-- Compatibility migration for existing databases
+alter table public.user_courses
+  add column if not exists access_type text;
+alter table public.user_courses
+  add column if not exists expires_at timestamptz;
+alter table public.user_courses
+  add column if not exists price_paid numeric;
+alter table public.certificates
+  add column if not exists instructor_name text;
+
+update public.user_courses
+set access_type = coalesce(access_type, 'lifetime')
+where access_type is null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'user_courses_access_type_check'
+  ) then
+    alter table public.user_courses
+      add constraint user_courses_access_type_check
+      check (access_type in ('lifetime', 'subscription'));
+  end if;
+end $$;
 
 -- Indexes
 create index if not exists idx_courses_created_at on public.courses(created_at desc);

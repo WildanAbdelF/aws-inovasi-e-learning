@@ -3,9 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getCourse as getCourseById } from "@/lib/services/courseApi";
-import { getPurchases, getSubscriptionByCourseId, getUser, addCertificate, getCertificateByCourseId, Certificate, hasLifetimeAccess } from "@/lib/localStorageHelper";
+import { Certificate } from "@/lib/localStorageHelper";
 import type { Course, CourseModule, QuizQuestion } from "@/types/course";
 import CertificateModal from "@/components/certificate/CertificateModal";
+import {
+	issueMyCertificate,
+	listMyCourseAccesses,
+} from "@/lib/services/userApi";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 type ProgressMap = Record<string, string[]>;
 type LearnCourse = Course & { modules: CourseModule[] };
@@ -22,6 +27,7 @@ const getProgressKey = (userEmail: string) => `lms_course_progress_${userEmail}`
 
 export default function LearnDetailPage() {
 	const router = useRouter();
+	const { user: authUser } = useAuth();
 	const params = useParams();
 	const courseId = params?.courseId as string;
 	const moduleId = params?.moduleId as string;
@@ -76,26 +82,40 @@ export default function LearnDetailPage() {
 	}, [courseId]);
 
 	useEffect(() => {
-		if (courseLoading) return;
-		if (!course) return;
-		const user = getUser();
-		if (!user) {
-			router.replace("/login");
-			return;
-		}
-		setCurrentUserEmail(user.email);
-		setCurrentUserName(user.name);
-		const purchases = getPurchases();
-		const hasLifetimePurchase = purchases.some((p) => p.id === course.id);
-		const hasAdminGrantedAccess = hasLifetimeAccess(user.email, course.id);
-		const hasSubscription = Boolean(getSubscriptionByCourseId(course.id));
-		const hasAccess = hasLifetimePurchase || hasAdminGrantedAccess || hasSubscription;
-		if (!hasAccess) {
-			router.replace("/dashboard");
-			return;
-		}
-		setIsAuthorized(true);
-	}, [course, courseLoading, router]);
+		if (courseLoading || !course) return;
+
+		const ensureAccess = async () => {
+			if (!authUser) {
+				router.replace("/login");
+				return;
+			}
+
+			setCurrentUserEmail(authUser.email);
+			setCurrentUserName(authUser.name);
+
+			try {
+				const accesses = await listMyCourseAccesses();
+				const hasAccess = accesses.some((entry) => {
+					if (entry.courseId !== course.id) return false;
+					if (entry.accessType === "subscription" && entry.expiresAt) {
+						return new Date(entry.expiresAt).getTime() > Date.now();
+					}
+					return true;
+				});
+
+				if (!hasAccess) {
+					router.replace("/dashboard");
+					return;
+				}
+
+				setIsAuthorized(true);
+			} catch {
+				router.replace("/dashboard");
+			}
+		};
+
+		void ensureAccess();
+	}, [authUser, course, courseLoading, router]);
 
 	useEffect(() => {
 		if (!isAuthorized || !course || !currentUserEmail) return;
@@ -144,27 +164,30 @@ export default function LearnDetailPage() {
 	// Check and award certificate when course is completed
 	useEffect(() => {
 		if (!isCourseCompleted || !currentUserEmail || !course) return;
-		
-		// Check if user already has certificate for this course
-		const existingCert = getCertificateByCourseId(currentUserEmail, course.id);
-		if (existingCert) {
-			setCurrentCertificate(existingCert);
-			return;
-		}
+		if (currentCertificate?.courseId === course.id) return;
 
-		// Award new certificate
-		const newCert = addCertificate({
-			courseId: course.id,
-			courseTitle: course.title,
-			userName: currentUserName,
-			userEmail: currentUserEmail,
-			instructorName: course.author || "Tim Instruktur",
-		});
-		if (newCert) {
-			setCurrentCertificate(newCert);
-			setShowCertificate(true); // Automatically show certificate modal
-		}
-	}, [isCourseCompleted, currentUserEmail, course, currentUserName]);
+		const syncCertificate = async () => {
+			try {
+				const cert = await issueMyCertificate(course.id);
+				const mapped: Certificate = {
+					id: cert.id,
+					courseId: cert.courseId,
+					courseTitle: cert.courseTitle,
+					userName: cert.userName,
+					userEmail: cert.userEmail,
+					instructorName: cert.instructorName,
+					completedAt: cert.completedAt,
+				};
+
+				setCurrentCertificate(mapped);
+				setShowCertificate(true);
+			} catch (error) {
+				console.error("Failed to issue certificate:", error);
+			}
+		};
+
+		void syncCertificate();
+	}, [isCourseCompleted, currentUserEmail, course, currentCertificate]);
 
 	const currentIndex = flattenedLessons.findIndex((entry) => entry.itemId === itemId);
 	const prevLesson = currentIndex > 0 ? flattenedLessons[currentIndex - 1] : null;

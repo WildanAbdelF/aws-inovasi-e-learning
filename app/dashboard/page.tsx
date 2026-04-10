@@ -3,10 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser, getPurchases, getSubscriptions, getCertificates, getUserLifetimeCourses, StoredUser, Certificate } from "@/lib/localStorageHelper";
+import { StoredUser, Certificate } from "@/lib/localStorageHelper";
 import type { Course } from "@/types/course";
 import { listCourses } from "@/lib/services/courseApi";
+import {
+	listMyCourseAccesses,
+	listMyCertificates,
+} from "@/lib/services/userApi";
+import type { UserCourseAccess, UserCertificate } from "@/types/user";
 import CertificateModal from "@/components/certificate/CertificateModal";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 type DashboardCourse = {
 	id: string;
@@ -20,6 +26,7 @@ type TabType = "courses" | "certificates";
 
 export default function DashboardPage() {
 	const router = useRouter();
+	const { user: authUser } = useAuth();
 	const [user, setUser] = useState<StoredUser | null>(null);
 	const [myCourses, setMyCourses] = useState<DashboardCourse[]>([]);
 	const [certificates, setCertificates] = useState<Certificate[]>([]);
@@ -29,74 +36,60 @@ export default function DashboardPage() {
 	const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
 	const [coursesById, setCoursesById] = useState<Record<string, Course>>({});
 
+	const mapCertificate = (item: UserCertificate): Certificate => ({
+		id: item.id,
+		courseId: item.courseId,
+		courseTitle: item.courseTitle,
+		userName: item.userName,
+		userEmail: item.userEmail,
+		instructorName: item.instructorName,
+		completedAt: item.completedAt,
+	});
+
+	const mapAccess = (item: UserCourseAccess): DashboardCourse => ({
+		id: item.courseId,
+		title: item.title,
+		price: item.pricePaid ?? item.price,
+		accessType: item.accessType,
+		expiresAt: item.expiresAt ?? null,
+	});
+
 	useEffect(() => {
 		const hydrateDashboard = async () => {
-		const storedUser = getUser();
-		if (!storedUser) {
+		if (!authUser) {
 			router.push("/login");
 			return;
 		}
-		setUser(storedUser);
-		setMyCourses(buildAccessibleCourses(storedUser.email));
-		setCertificates(getCertificates(storedUser.email));
+		setUser(authUser);
 
 		try {
-			const courses = await listCourses();
+			const [courses, accesses, certRows] = await Promise.all([
+				listCourses(),
+				listMyCourseAccesses(),
+				listMyCertificates(),
+			]);
 			const map = courses.reduce<Record<string, Course>>((acc, course) => {
 				acc[String(course.id)] = course;
 				return acc;
 			}, {});
 			setCoursesById(map);
+			const activeAccesses = accesses.filter(
+				(entry) =>
+					entry.accessType !== "subscription" ||
+					!entry.expiresAt ||
+					new Date(entry.expiresAt).getTime() > Date.now()
+			);
+			setMyCourses(activeAccesses.map(mapAccess));
+			setCertificates(certRows.map(mapCertificate));
 		} catch (error) {
 			console.error("Failed to load courses for dashboard:", error);
+			setMyCourses([]);
+			setCertificates([]);
 		}
 		};
 
 		void hydrateDashboard();
-	}, [router]);
-
-	const buildAccessibleCourses = (userEmail: string): DashboardCourse[] => {
-		const purchases = getPurchases().map((course) => ({
-			id: course.id,
-			title: course.title,
-			price: course.price,
-			accessType: "lifetime" as const,
-			expiresAt: null,
-		}));
-		const subscriptions = getSubscriptions().map((sub) => ({
-			id: sub.courseId,
-			title: sub.title,
-			price: null,
-			accessType: "subscription" as const,
-			expiresAt: sub.expiresAt,
-		}));
-		// Include admin-granted lifetime courses
-		const adminGrantedCourses = getUserLifetimeCourses(userEmail).map((course) => ({
-			id: course.id,
-			title: course.title,
-			price: null,
-			accessType: "lifetime" as const,
-			expiresAt: null,
-		}));
-
-		const map = new Map<string, DashboardCourse>();
-		purchases.forEach((course) => {
-			map.set(course.id, course);
-		});
-		// Admin-granted courses (won't overwrite purchases)
-		adminGrantedCourses.forEach((course) => {
-			if (!map.has(course.id)) {
-				map.set(course.id, course);
-			}
-		});
-		subscriptions.forEach((sub) => {
-			if (!map.has(sub.id)) {
-				map.set(sub.id, sub);
-			}
-		});
-
-		return Array.from(map.values());
-	};
+	}, [authUser, router]);
 
 	if (!user) {
 		return null;

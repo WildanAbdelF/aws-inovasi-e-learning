@@ -3,19 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  addMonthlySubscription,
-  addPurchase,
-  getPurchases,
-  getSubscriptionByCourseId,
-  hasLifetimeAccess,
-  getUser,
-} from "@/lib/localStorageHelper";
-import type { CourseSubscription } from "@/lib/localStorageHelper";
 import type { Course } from "@/types/course";
+import type { UserCourseAccess } from "@/types/user";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInView } from "@/lib/hooks";
 import { useAuth } from "@/components/providers/AuthProvider";
+import {
+  createMyCourseAccess,
+  listMyCourseAccesses,
+} from "@/lib/services/userApi";
 
 export type CourseDetailClientProps = {
   course: Course;
@@ -25,8 +21,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
   const [open, setOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [alreadyPurchased, setAlreadyPurchased] = useState(false);
-  const [hasAdminGrantedAccess, setHasAdminGrantedAccess] = useState(false);
-  const [activeSubscription, setActiveSubscription] = useState<CourseSubscription | null>(null);
+  const [activeSubscription, setActiveSubscription] = useState<UserCourseAccess | null>(null);
   const [checkoutMode, setCheckoutMode] = useState<"lifetime" | "subscription" | null>(null);
   const [successType, setSuccessType] = useState<"lifetime" | "subscription" | null>(null);
   const [successExpiresAt, setSuccessExpiresAt] = useState<string | null>(null);
@@ -38,19 +33,34 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
   const { ref: asideRef, inView: asideInView } = useInView({ threshold: 0.2 });
 
   useEffect(() => {
-    const list = getPurchases();
-    setAlreadyPurchased(list.some((c) => c.id === String(course.id)));
-    // Check for admin-granted lifetime access
-    const currentUser = getUser();
-    if (currentUser) {
-      setHasAdminGrantedAccess(hasLifetimeAccess(currentUser.email, String(course.id)));
-    }
-  }, [course.id]);
+    const loadAccess = async () => {
+      if (!user) {
+        setAlreadyPurchased(false);
+        setActiveSubscription(null);
+        return;
+      }
 
-  useEffect(() => {
-    const subscription = getSubscriptionByCourseId(String(course.id));
-    setActiveSubscription(subscription);
-  }, [course.id]);
+      try {
+        const accesses = await listMyCourseAccesses();
+        const related = accesses.filter((item) => item.courseId === String(course.id));
+        const lifetime = related.find((item) => item.accessType === "lifetime") ?? null;
+        const subscription =
+          related.find(
+            (item) =>
+              item.accessType === "subscription" &&
+              (!item.expiresAt || new Date(item.expiresAt).getTime() > Date.now())
+          ) ?? null;
+
+        setAlreadyPurchased(Boolean(lifetime));
+        setActiveSubscription(subscription);
+      } catch {
+        setAlreadyPurchased(false);
+        setActiveSubscription(null);
+      }
+    };
+
+    void loadAccess();
+  }, [course.id, user]);
 
   useEffect(() => {
     return () => {
@@ -67,6 +77,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
   }, [course.price]);
 
   const hasMonthlyAccess = Boolean(activeSubscription);
+  const hasAnyAccess = alreadyPurchased || hasMonthlyAccess;
   const isSubscriptionFlow = checkoutMode === "subscription";
   const dialogTitle = isSubscriptionFlow ? "Aktivasi Langganan 1 Bulan" : "Selesaikan Pembelian";
   const dialogDescription = isSubscriptionFlow
@@ -141,21 +152,30 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
     setOpen(true);
   };
 
-  const handleConfirmPurchase = () => {
+  const handleConfirmPurchase = async () => {
     if (!checkoutMode) return;
     const mode = checkoutMode;
 
-    if (mode === "subscription") {
-      const subscription = addMonthlySubscription({ id: String(course.id), title: course.title });
-      if (!subscription) return;
-      setActiveSubscription(subscription);
-      setSuccessType("subscription");
-      setSuccessExpiresAt(subscription.expiresAt);
-    } else {
-      addPurchase({ id: String(course.id), title: course.title, price: course.price });
-      setAlreadyPurchased(true);
-      setSuccessType("lifetime");
-      setSuccessExpiresAt(null);
+    try {
+      const access = await createMyCourseAccess({
+        courseId: String(course.id),
+        accessType: mode,
+      });
+
+      if (mode === "subscription") {
+        setActiveSubscription(access);
+        setSuccessType("subscription");
+        setSuccessExpiresAt(access.expiresAt ?? null);
+      } else {
+        setAlreadyPurchased(true);
+        setSuccessType("lifetime");
+        setSuccessExpiresAt(null);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Gagal memproses pembelian kursus.";
+      window.alert(message);
+      return;
     }
 
     handleDialogChange(false);
@@ -218,9 +238,9 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
               <div className="text-2xl font-bold">Rp {course.price.toLocaleString("id-ID")}</div>
               <div className="text-xs text-neutral-500 flex items-center gap-2">
                 <span>Akses Lifetime</span>
-                {(alreadyPurchased || hasAdminGrantedAccess) && (
+                {alreadyPurchased && (
                   <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold px-2 py-0.5">
-                    {hasAdminGrantedAccess && !alreadyPurchased ? "Akses Diberikan" : "Sudah dibeli"}
+                    Sudah dibeli
                   </span>
                 )}
               </div>
@@ -232,7 +252,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
             </div>
 
             <div className="flex flex-col gap-3">
-              {(alreadyPurchased || hasAdminGrantedAccess) && (
+              {alreadyPurchased && (
                 <button
                   className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-semibold transition hover:scale-102"
                   onClick={handleContinueLearning}
@@ -241,7 +261,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
                 </button>
               )}
 
-              {!alreadyPurchased && !hasAdminGrantedAccess && hasMonthlyAccess && (
+              {!alreadyPurchased && hasMonthlyAccess && (
                 <>
                   <button
                     className="w-full bg-blue-600 text-white py-3 rounded-lg hover:scale-102 transition"
@@ -265,7 +285,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
                 </>
               )}
 
-              {!alreadyPurchased && !hasAdminGrantedAccess && !hasMonthlyAccess && (
+              {!hasAnyAccess && (
                 <>
                   <button
                     className="w-full bg-red-600 font-semibold text-white py-3 rounded-lg hover:bg-red-700 hover:scale-102 transition"
