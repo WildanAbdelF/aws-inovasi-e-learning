@@ -3,13 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser, clearUser, clearPurchases } from "@/lib/localStorageHelper";
+import { getUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers/AuthProvider";
-import {
-	AdminCourse,
-	getAdminCourses,
-	saveAdminCourses,
-} from "@/lib/adminCoursesStorage";
+import type { Course, CourseModule } from "@/types/course";
+import { listCourses, deleteCourse } from "@/lib/services/courseApi";
 import {
 	Dialog,
 	DialogContent,
@@ -17,15 +14,25 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 
+type ManagedCourse = Course & { modules: CourseModule[] };
+
+function toManagedCourse(course: Course): ManagedCourse {
+	return {
+		...course,
+		modules: Array.isArray(course.modules) ? course.modules : [],
+	};
+}
+
 export default function AdminManagementPage() {
 	const router = useRouter();
 	const { logout } = useAuth();
 	const [loading, setLoading] = useState(true);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const [user, setUser] = useState<any>(null);
-	const [courses, setCourses] = useState<AdminCourse[]>([]);
+	const [courses, setCourses] = useState<ManagedCourse[]>([]);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	// Protect route: only admin can access
 	useEffect(() => {
@@ -36,18 +43,36 @@ export default function AdminManagementPage() {
 		}
 		setUser(stored);
 
-		const existing = getAdminCourses();
-		setCourses(existing);
-		setLoading(false);
+		const loadCourses = async () => {
+			try {
+				const data = await listCourses();
+				setCourses(data.map(toManagedCourse));
+			} catch (error) {
+				console.error("Failed to load courses:", error);
+				window.alert("Gagal memuat daftar kursus dari API.");
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		void loadCourses();
 	}, [router]);
 
-	const handleDeleteCourse = () => {
+	const handleDeleteCourse = async () => {
 		if (!courseToDelete) return;
-		const updated = courses.filter((c) => c.id !== courseToDelete);
-		saveAdminCourses(updated);
-		setCourses(updated);
-		setDeleteDialogOpen(false);
-		setCourseToDelete(null);
+
+		setIsDeleting(true);
+		try {
+			await deleteCourse(courseToDelete);
+			setCourses((prev) => prev.filter((c) => c.id !== courseToDelete));
+			setDeleteDialogOpen(false);
+			setCourseToDelete(null);
+		} catch (error) {
+			console.error("Failed to delete course:", error);
+			window.alert("Gagal menghapus kursus. Silakan coba lagi.");
+		} finally {
+			setIsDeleting(false);
+		}
 	};
 
 	const confirmDelete = (courseId: string) => {
@@ -338,9 +363,11 @@ export default function AdminManagementPage() {
 					</button>
 					<button
 						onClick={handleDeleteCourse}
+						disabled={isDeleting}
+						aria-busy={isDeleting}
 						className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
 					>
-						Hapus
+						{isDeleting ? "Menghapus..." : "Hapus"}
 					</button>
 				</div>
 			</DialogContent>

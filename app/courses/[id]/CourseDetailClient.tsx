@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { dummyCourses } from "@/lib/data/courses.data";
 import {
   addMonthlySubscription,
   addPurchase,
@@ -13,12 +12,13 @@ import {
   getUser,
 } from "@/lib/localStorageHelper";
 import type { CourseSubscription } from "@/lib/localStorageHelper";
+import type { Course } from "@/types/course";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInView } from "@/lib/hooks";
 import { useAuth } from "@/components/providers/AuthProvider";
 
 export type CourseDetailClientProps = {
-  course: (typeof dummyCourses)[number];
+  course: Course;
 };
 
 export default function CourseDetailClient({ course }: CourseDetailClientProps) {

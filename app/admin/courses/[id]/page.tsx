@@ -3,19 +3,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { getUser, clearUser, clearPurchases } from "@/lib/localStorageHelper";
+import { getUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers/AuthProvider";
-import {
-	AdminCourse,
-	getAdminCourses,
-	saveAdminCourses,
-} from "@/lib/adminCoursesStorage";
+import { getCourse as getCourseById, updateCourse as updateCourseById } from "@/lib/services/courseApi";
+import type { Course, CourseModule } from "@/types/course";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+
+type EditableCourse = Course & { modules: CourseModule[] };
+
+function toEditableCourse(course: Course): EditableCourse {
+	return {
+		...course,
+		modules: Array.isArray(course.modules) ? course.modules : [],
+	};
+}
 
 export default function EditCoursePage() {
 	const router = useRouter();
@@ -25,11 +31,12 @@ export default function EditCoursePage() {
 
 	const [loading, setLoading] = useState(true);
 	const [user, setUser] = useState<any>(null);
-	const [course, setCourse] = useState<AdminCourse | null>(null);
+	const [course, setCourse] = useState<EditableCourse | null>(null);
 	const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
 	const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 	const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 	const [notFound, setNotFound] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Protect route: only admin can access
 	useEffect(() => {
@@ -40,20 +47,23 @@ export default function EditCoursePage() {
 		}
 		setUser(stored);
 
-		// Load existing course
-		const existing = getAdminCourses();
-		const found = existing.find((c) => c.id === courseId);
+		const loadCourse = async () => {
+			try {
+				const found = await getCourseById(courseId);
+				const normalized = toEditableCourse(found);
+				setCourse(normalized);
+				const firstModule = normalized.modules[0];
+				setSelectedModuleId(firstModule?.id || null);
+				setSelectedItemId(firstModule?.items[0]?.id || null);
+			} catch (error) {
+				console.error("Failed to load course:", error);
+				setNotFound(true);
+			} finally {
+				setLoading(false);
+			}
+		};
 
-		if (found) {
-			setCourse(found);
-			const firstModule = found.modules[0];
-			setSelectedModuleId(firstModule?.id || null);
-			setSelectedItemId(firstModule?.items[0]?.id || null);
-		} else {
-			setNotFound(true);
-		}
-
-		setLoading(false);
+		void loadCourse();
 	}, [router, courseId]);
 
 	const selectedModule = useMemo(
@@ -66,30 +76,39 @@ export default function EditCoursePage() {
 		[selectedModule, selectedItemId]
 	);
 
-	const updateCourse = (updater: (c: AdminCourse) => AdminCourse) => {
+	const updateCourse = (updater: (c: EditableCourse) => EditableCourse) => {
 		setCourse((prev) => {
 			if (!prev) return prev;
 			return updater(prev);
 		});
 	};
 
-	const handleSave = () => {
+	const handleSave = async () => {
 		if (course) {
 			// Validasi minimal
 			if (!course.title.trim()) {
 				window.alert("Judul kursus tidak boleh kosong.");
 				return;
 			}
+			if (!course.image.trim()) {
+				window.alert("Thumbnail kursus wajib diisi.");
+				return;
+			}
 
-			// Update di localStorage
-			const existing = getAdminCourses();
-			const updatedCourses = existing.map((c) =>
-				c.id === course.id ? course : c
-			);
-			saveAdminCourses(updatedCourses);
-
-			// Tampilkan dialog sukses
-			setSuccessDialogOpen(true);
+			setIsSaving(true);
+			try {
+				const payload: Course = {
+					...course,
+					author: course.author?.trim() || user?.name || "Admin",
+				};
+				await updateCourseById(course.id, payload);
+				setSuccessDialogOpen(true);
+			} catch (error) {
+				console.error("Failed to update course:", error);
+				window.alert("Gagal menyimpan perubahan ke API. Silakan coba lagi.");
+			} finally {
+				setIsSaving(false);
+			}
 		}
 	};
 
@@ -255,9 +274,11 @@ export default function EditCoursePage() {
 						</Link>
 						<button
 							onClick={handleSave}
+							disabled={isSaving}
+							aria-busy={isSaving}
 							className="px-4 py-2.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium transition-colors"
 						>
-							Simpan Perubahan
+							{isSaving ? "Menyimpan..." : "Simpan Perubahan"}
 						</button>
 					</div>
 				</div>

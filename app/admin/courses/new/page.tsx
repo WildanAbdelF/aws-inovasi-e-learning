@@ -3,21 +3,52 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser, clearUser, clearPurchases } from "@/lib/localStorageHelper";
+import { getUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers/AuthProvider";
-import {
-	AdminCourse,
-	createEmptyAdminCourse,
-	getAdminCourses,
-	saveAdminCourses,
-} from "@/lib/adminCoursesStorage";
+import { createCourse } from "@/lib/services/courseApi";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { QuizQuestion, QuizOption } from "@/types/course";
+import type {
+	Course,
+	CourseModule,
+	CourseModuleContent,
+	QuizQuestion,
+} from "@/types/course";
+
+type CourseDraft = Course & { modules: CourseModule[] };
+
+function createEmptyCourseDraft(): CourseDraft {
+	const id = `course_${Date.now()}`;
+	const firstModuleId = `module_${Date.now()}`;
+	const firstItemId = `item_${Date.now()}`;
+
+	const firstModule: CourseModule = {
+		id: firstModuleId,
+		title: "Introduction",
+		items: [
+			{
+				id: firstItemId,
+				title: "What is this course?",
+				type: "page",
+				content: "",
+			} as CourseModuleContent,
+		],
+	};
+
+	return {
+		id,
+		title: "",
+		author: "",
+		price: 0,
+		image: "",
+		description: "",
+		modules: [firstModule],
+	};
+}
 
 // =====================
 // QUIZ EDITOR COMPONENT
@@ -29,7 +60,7 @@ function QuizEditor({
 }: {
 	selectedItem: any;
 	selectedModule: any;
-	updateCourse: (updater: (c: AdminCourse) => AdminCourse) => void;
+	updateCourse: (updater: (c: CourseDraft) => CourseDraft) => void;
 }) {
 	const questions: QuizQuestion[] = selectedItem.quizQuestions || [];
 
@@ -242,10 +273,11 @@ export default function NewCoursePage() {
 	const [loading, setLoading] = useState(true);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const [user, setUser] = useState<any>(null);
-	const [course, setCourse] = useState<AdminCourse | null>(null);
+	const [course, setCourse] = useState<CourseDraft | null>(null);
 	const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
 	const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 	const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 
 	// Protect route: only admin can access
 	useEffect(() => {
@@ -257,7 +289,7 @@ export default function NewCoursePage() {
 		setUser(stored);
 
 		// Create new empty course
-		const empty = createEmptyAdminCourse();
+		const empty = createEmptyCourseDraft();
 		setCourse(empty);
 		setSelectedModuleId(empty.modules[0].id);
 		setSelectedItemId(empty.modules[0].items[0].id);
@@ -274,27 +306,39 @@ export default function NewCoursePage() {
 		[selectedModule, selectedItemId]
 	);
 
-	const updateCourse = (updater: (c: AdminCourse) => AdminCourse) => {
+	const updateCourse = (updater: (c: CourseDraft) => CourseDraft) => {
 		setCourse((prev) => {
 			if (!prev) return prev;
 			return updater(prev);
 		});
 	};
 
-	const handleSave = () => {
+	const handleSave = async () => {
 		if (course) {
 			// Validasi minimal
 			if (!course.title.trim()) {
 				window.alert("Judul kursus tidak boleh kosong.");
 				return;
 			}
+			if (!course.image.trim()) {
+				window.alert("Thumbnail kursus wajib diisi.");
+				return;
+			}
 
-			// Simpan ke localStorage
-			const existing = getAdminCourses();
-			saveAdminCourses([...existing, course]);
-			
-			// Tampilkan dialog sukses
-			setSuccessDialogOpen(true);
+			setIsSaving(true);
+			try {
+				const payload: Course = {
+					...course,
+					author: course.author?.trim() || user?.name || "Admin",
+				};
+				await createCourse(payload);
+				setSuccessDialogOpen(true);
+			} catch (error) {
+				console.error("Failed to create course:", error);
+				window.alert("Gagal menyimpan kursus ke API. Silakan coba lagi.");
+			} finally {
+				setIsSaving(false);
+			}
 		}
 	};
 
@@ -470,9 +514,11 @@ export default function NewCoursePage() {
 						</Link>
 						<button
 							onClick={handleSave}
+							disabled={isSaving}
+							aria-busy={isSaving}
 							className="px-4 py-2.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium transition-colors"
 						>
-							Simpan Kursus
+							{isSaving ? "Menyimpan..." : "Simpan Kursus"}
 						</button>
 					</div>
 				</div>
@@ -892,7 +938,7 @@ export default function NewCoursePage() {
 							onClick={() => {
 								setSuccessDialogOpen(false);
 								// Reset form untuk membuat kursus baru
-								const empty = createEmptyAdminCourse();
+								const empty = createEmptyCourseDraft();
 								setCourse(empty);
 								setSelectedModuleId(empty.modules[0].id);
 								setSelectedItemId(empty.modules[0].items[0].id);

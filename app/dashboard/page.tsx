@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getUser, getPurchases, getSubscriptions, getCertificates, getUserLifetimeCourses, StoredUser, Certificate } from "@/lib/localStorageHelper";
-import { dummyCourses } from "@/lib/data/courses.data";
+import type { Course } from "@/types/course";
+import { listCourses } from "@/lib/services/courseApi";
 import CertificateModal from "@/components/certificate/CertificateModal";
 
 type DashboardCourse = {
@@ -26,8 +27,10 @@ export default function DashboardPage() {
 	const [isTabAnimating, setIsTabAnimating] = useState(false);
 	const [showCertificate, setShowCertificate] = useState(false);
 	const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
+	const [coursesById, setCoursesById] = useState<Record<string, Course>>({});
 
 	useEffect(() => {
+		const hydrateDashboard = async () => {
 		const storedUser = getUser();
 		if (!storedUser) {
 			router.push("/login");
@@ -36,6 +39,20 @@ export default function DashboardPage() {
 		setUser(storedUser);
 		setMyCourses(buildAccessibleCourses(storedUser.email));
 		setCertificates(getCertificates(storedUser.email));
+
+		try {
+			const courses = await listCourses();
+			const map = courses.reduce<Record<string, Course>>((acc, course) => {
+				acc[String(course.id)] = course;
+				return acc;
+			}, {});
+			setCoursesById(map);
+		} catch (error) {
+			console.error("Failed to load courses for dashboard:", error);
+		}
+		};
+
+		void hydrateDashboard();
 	}, [router]);
 
 	const buildAccessibleCourses = (userEmail: string): DashboardCourse[] => {
@@ -97,7 +114,7 @@ export default function DashboardPage() {
 	};
 
 	const getFirstLessonPath = (courseId: string) => {
-		const courseData = dummyCourses.find((course) => course.id === courseId);
+		const courseData = coursesById[courseId];
 		const firstModule = courseData?.modules?.[0];
 		const firstItem = firstModule?.items[0];
 		if (!firstModule || !firstItem) return null;

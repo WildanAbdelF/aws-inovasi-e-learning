@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getUser } from "@/lib/localStorageHelper";
-import { getAdminCourses } from "@/lib/adminCoursesStorage";
 import { getRegisteredUsers } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers/AuthProvider";
 

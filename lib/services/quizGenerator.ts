@@ -162,31 +162,10 @@ async function callGemini(prompt: string): Promise<string> {
  * Requires: npm install @aws-sdk/client-bedrock-runtime
  */
 async function callAWSBedrock(prompt: string): Promise<string> {
-  // Requires AWS SDK configured with proper credentials
-  // npm install @aws-sdk/client-bedrock-runtime
-  
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error - Optional dependency, install if using AWS Bedrock
-  const { BedrockRuntimeClient, InvokeModelCommand } = await import("@aws-sdk/client-bedrock-runtime");
-
-  const client = new BedrockRuntimeClient({ 
-    region: process.env.AWS_REGION || "us-east-1" 
-  });
-
-  const command = new InvokeModelCommand({
-    modelId: "anthropic.claude-3-sonnet-20240229-v1:0",
-    contentType: "application/json",
-    accept: "application/json",
-    body: JSON.stringify({
-      anthropic_version: "bedrock-2023-05-31",
-      max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  const response = await client.send(command);
-  const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-  return responseBody.content[0].text;
+  void prompt;
+  throw new Error(
+    "AWS Bedrock provider is disabled in this build. Install @aws-sdk/client-bedrock-runtime and re-enable callAWSBedrock implementation if needed."
+  );
 }
 
 /**

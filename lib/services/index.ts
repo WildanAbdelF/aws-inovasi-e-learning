@@ -17,3 +17,11 @@ export {
   generateQuizFromMaterial,
   generateQuizForModule,
 } from "./quizGenerator";
+
+export {
+  listCourses,
+  getCourse,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+} from "./courseApi";

@@ -2,12 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { dummyCourses } from "@/lib/data/courses.data";
+import { getCourse as getCourseById } from "@/lib/services/courseApi";
 import { getPurchases, getSubscriptionByCourseId, getUser, addCertificate, getCertificateByCourseId, Certificate, hasLifetimeAccess } from "@/lib/localStorageHelper";
-import type { QuizQuestion } from "@/types/course";
+import type { Course, CourseModule, QuizQuestion } from "@/types/course";
 import CertificateModal from "@/components/certificate/CertificateModal";
 
 type ProgressMap = Record<string, string[]>;
+type LearnCourse = Course & { modules: CourseModule[] };
+
+function normalizeLearnCourse(course: Course): LearnCourse {
+	return {
+		...course,
+		modules: Array.isArray(course.modules) ? course.modules : [],
+	};
+}
 
 // Progress key is now per-user
 const getProgressKey = (userEmail: string) => `lms_course_progress_${userEmail}`;
@@ -18,7 +26,9 @@ export default function LearnDetailPage() {
 	const courseId = params?.courseId as string;
 	const moduleId = params?.moduleId as string;
 	const itemId = params?.itemId as string;
-	const course = dummyCourses.find((c) => c.id === courseId);
+	const [course, setCourse] = useState<LearnCourse | null>(null);
+	const [courseLoading, setCourseLoading] = useState(true);
+	const [courseNotFound, setCourseNotFound] = useState(false);
 	const modules = course?.modules ?? [];
 	const [progress, setProgress] = useState<string[]>([]);
 	const [progressLoaded, setProgressLoaded] = useState(false);
@@ -47,6 +57,26 @@ export default function LearnDetailPage() {
 	const isQuizItem = currentItem?.type === "quiz" && quizQuestions.length > 0;
 
 	useEffect(() => {
+		const loadCourse = async () => {
+			setCourseLoading(true);
+			try {
+				const response = await getCourseById(courseId);
+				setCourse(normalizeLearnCourse(response));
+				setCourseNotFound(false);
+			} catch (error) {
+				console.error("Failed to load course:", error);
+				setCourse(null);
+				setCourseNotFound(true);
+			} finally {
+				setCourseLoading(false);
+			}
+		};
+
+		void loadCourse();
+	}, [courseId]);
+
+	useEffect(() => {
+		if (courseLoading) return;
 		if (!course) return;
 		const user = getUser();
 		if (!user) {
@@ -65,7 +95,7 @@ export default function LearnDetailPage() {
 			return;
 		}
 		setIsAuthorized(true);
-	}, [course, router]);
+	}, [course, courseLoading, router]);
 
 	useEffect(() => {
 		if (!isAuthorized || !course || !currentUserEmail) return;
@@ -160,7 +190,18 @@ export default function LearnDetailPage() {
 	// Check if current item is accessible
 	const isCurrentItemUnlocked = isItemUnlocked(itemId);
 
-	if (!course) {
+	if (courseLoading) {
+		return (
+			<div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+				<div className="text-center">
+					<div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+					<p className="text-neutral-500">Memuat course...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (courseNotFound || !course) {
 		return <div className="max-w-4xl mx-auto py-10 px-6">Course tidak ditemukan.</div>;
 	}
 

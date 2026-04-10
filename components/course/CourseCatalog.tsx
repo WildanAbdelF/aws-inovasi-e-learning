@@ -2,27 +2,42 @@
 
 import { useEffect, useMemo, useState } from "react";
 import CourseList from "./CourseList";
-import { dummyCourses } from "@/lib/data/courses.data";
-import { getAdminCourses } from "@/lib/adminCoursesStorage";
+import type { Course } from "@/types/course";
+import { listCourses } from "@/lib/services/courseApi";
 
 export default function CourseCatalog() {
   const [query, setQuery] = useState("");
-  const [adminCourses, setAdminCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Ambil course yang dibuat admin dari localStorage
-    const data = getAdminCourses();
-    setAdminCourses(data);
+    const loadCourses = async () => {
+      try {
+        const data = await listCourses();
+        setCourses(data);
+      } catch (error) {
+        console.error("Failed to load courses:", error);
+        window.alert("Gagal memuat course dari API.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadCourses();
   }, []);
 
-  const allCourses = useMemo(
-    () => [...dummyCourses, ...adminCourses],
-    [adminCourses]
-  );
-
-  const filtered = allCourses.filter((c) =>
+  const filtered = useMemo(() => courses.filter((c) =>
     c.title.toLowerCase().includes(query.toLowerCase())
-  );
+  ), [courses, query]);
+
+  if (loading) {
+    return (
+      <section className="max-w-7xl mx-auto py-12 px-6">
+        <h1 className="text-3xl font-bold mb-6">Katalog Kursus</h1>
+        <p className="text-sm text-neutral-500">Memuat course...</p>
+      </section>
+    );
+  }
 
   return (
     <section className="max-w-7xl mx-auto py-12 px-6">
