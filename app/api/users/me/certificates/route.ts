@@ -1,7 +1,10 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getAuthenticatedProfile } from "@/lib/serverAuth";
+import {
+  applyRefreshedSessionCookies,
+  getAuthenticatedProfile,
+} from "@/lib/serverAuth";
 import type { UserCertificate } from "@/types/user";
 
 export const runtime = "nodejs";
@@ -73,9 +76,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     data: (data ?? []).map((row: any) => mapCertificate(row, session.profile)),
   });
+  applyRefreshedSessionCookies(response, session);
+  return response;
 }
 
 export async function POST(request: NextRequest) {
@@ -117,7 +122,9 @@ export async function POST(request: NextRequest) {
   const existing = existingFallback?.data ?? existingPrimary.data;
 
   if (existing) {
-    return NextResponse.json({ data: mapCertificate(existing, session.profile) });
+    const response = NextResponse.json({ data: mapCertificate(existing, session.profile) });
+    applyRefreshedSessionCookies(response, session);
+    return response;
   }
 
   const { data: course, error: courseError } = await supabaseAdmin
@@ -146,10 +153,12 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!primaryInsert.error) {
-    return NextResponse.json(
+    const response = NextResponse.json(
       { data: mapCertificate(primaryInsert.data, session.profile) },
       { status: 201 }
     );
+    applyRefreshedSessionCookies(response, session);
+    return response;
   }
 
   const fallbackInsert = await supabaseAdmin
@@ -168,8 +177,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: fallbackInsert.error.message }, { status: 500 });
   }
 
-  return NextResponse.json(
+  const response = NextResponse.json(
     { data: mapCertificate(fallbackInsert.data, session.profile) },
     { status: 201 }
   );
+  applyRefreshedSessionCookies(response, session);
+  return response;
 }

@@ -94,10 +94,6 @@ export default function SettingsPage() {
       try {
         const profile = await getMyProfile();
         const normalized = mapApiProfileToStoredUser(profile);
-        const [courseAccesses, certificateRows] = await Promise.all([
-          listMyCourseAccesses(),
-          listMyCertificates(),
-        ]);
 
         setUser(normalized);
         login(normalized);
@@ -106,9 +102,26 @@ export default function SettingsPage() {
           name: normalized.name,
           email: normalized.email,
         }));
-        setPurchases(courseAccesses.map(mapAccessToPurchase));
-        setCertificates(certificateRows.map(mapApiCertificate));
-      } catch {
+
+        try {
+          const [courseAccesses, certificateRows] = await Promise.all([
+            listMyCourseAccesses(),
+            listMyCertificates(),
+          ]);
+          setPurchases(courseAccesses.map(mapAccessToPurchase));
+          setCertificates(certificateRows.map(mapApiCertificate));
+        } catch {
+          setPurchases([]);
+          setCertificates([]);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unauthorized";
+        if (message.toLowerCase().includes("unauthorized")) {
+          logout();
+          router.replace("/login");
+          return;
+        }
+
         setUser(authUser);
         setFormData((prev) => ({
           ...prev,
@@ -123,7 +136,7 @@ export default function SettingsPage() {
     };
 
     void loadProfile();
-  }, [authUser, router]);
+  }, [authUser, login, logout, router]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -156,6 +169,14 @@ export default function SettingsPage() {
         error instanceof Error
           ? error.message
           : "Gagal menyimpan perubahan profil.";
+
+      if (message.toLowerCase().includes("unauthorized")) {
+        window.alert("Sesi Anda habis. Silakan login kembali.");
+        logout();
+        router.push("/login");
+        return;
+      }
+
       window.alert(message);
     }
   };

@@ -31,13 +31,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		const syncUserFromApi = async () => {
 			try {
 				const apiUser = await fetchCurrentUser();
-				if (!apiUser) return;
+				if (!apiUser) {
+					logoutHelper();
+					setUser(null);
+					return;
+				}
 
 				const normalized = mapApiUserToStoredUser(apiUser);
 				saveUser(normalized);
 				setUser(normalized);
 			} catch {
-				// Keep local session fallback when API check fails.
+				// Keep local session fallback only when API is temporarily unavailable.
 			}
 		};
 

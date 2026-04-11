@@ -1,5 +1,6 @@
-import { NextRequest } from "next/server";
-import { AUTH_COOKIE_KEYS } from "@/lib/authCookies";
+import type { Session } from "@supabase/supabase-js";
+import { NextRequest, type NextResponse } from "next/server";
+import { AUTH_COOKIE_KEYS, setAuthCookies } from "@/lib/authCookies";
 import { getSupabaseAdmin, getSupabaseAuthClient } from "@/lib/supabase";
 import type { ApiUserProfile, UserRole } from "@/types/user";
 
@@ -7,6 +8,7 @@ export type AuthenticatedProfileResult =
   | {
       profile: ApiUserProfile;
       authUser: { id: string; email: string };
+      refreshedSession?: Session;
     }
   | {
       error: string;
@@ -41,19 +43,43 @@ export async function getAuthenticatedProfile(
   }
 
   const accessToken = request.cookies.get(AUTH_COOKIE_KEYS.accessToken)?.value;
-  if (!accessToken) {
+  const refreshToken = request.cookies.get(AUTH_COOKIE_KEYS.refreshToken)?.value;
+
+  if (!accessToken && !refreshToken) {
     return { error: "Unauthorized", status: 401 };
   }
 
-  const { data: authData, error: authError } = await supabaseAuth.auth.getUser(accessToken);
+  let authUserId = "";
+  let authUserEmail = "";
+  let refreshedSession: Session | undefined;
 
-  if (authError || !authData.user) {
+  if (accessToken) {
+    const { data: authData, error: authError } = await supabaseAuth.auth.getUser(accessToken);
+    if (!authError && authData.user) {
+      authUserId = authData.user.id;
+      authUserEmail = authData.user.email ?? "";
+    }
+  }
+
+  if (!authUserId && refreshToken) {
+    const { data: refreshedData, error: refreshError } = await supabaseAuth.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+
+    if (!refreshError && refreshedData.user && refreshedData.session) {
+      authUserId = refreshedData.user.id;
+      authUserEmail = refreshedData.user.email ?? "";
+      refreshedSession = refreshedData.session;
+    }
+  }
+
+  if (!authUserId) {
     return { error: "Unauthorized", status: 401 };
   }
 
   const authUser = {
-    id: authData.user.id,
-    email: authData.user.email ?? "",
+    id: authUserId,
+    email: authUserEmail,
   };
 
   const { data: profile, error: profileError } = await supabaseAdmin
@@ -69,7 +95,7 @@ export async function getAuthenticatedProfile(
   if (!profile) {
     const fallbackProfile = {
       id: authUser.id,
-      name: authData.user.user_metadata?.name ?? authUser.email.split("@")[0] ?? "User",
+      name: authUser.email.split("@")[0] ?? "User",
       email: authUser.email,
       role: normalizeRole(authUser.email === "admin@example.com" ? "admin" : "user"),
     };
@@ -87,11 +113,22 @@ export async function getAuthenticatedProfile(
         ...fallbackProfile,
       },
       authUser,
+      refreshedSession,
     };
   }
 
   return {
     profile: mapUserProfile(profile),
     authUser,
+    refreshedSession,
   };
+}
+
+export function applyRefreshedSessionCookies(
+  response: NextResponse,
+  session: { refreshedSession?: Session }
+) {
+  if (session.refreshedSession) {
+    setAuthCookies(response, session.refreshedSession);
+  }
 }

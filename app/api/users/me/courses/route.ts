@@ -1,7 +1,10 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getAuthenticatedProfile } from "@/lib/serverAuth";
+import {
+  applyRefreshedSessionCookies,
+  getAuthenticatedProfile,
+} from "@/lib/serverAuth";
 import type { UserCourseAccess } from "@/types/user";
 
 export const runtime = "nodejs";
@@ -79,7 +82,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data: (data ?? []).map(mapCourseAccess) });
+  const response = NextResponse.json({ data: (data ?? []).map(mapCourseAccess) });
+  applyRefreshedSessionCookies(response, session);
+  return response;
 }
 
 export async function POST(request: NextRequest) {
@@ -137,7 +142,12 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!primaryUpsert.error) {
-    return NextResponse.json({ data: mapCourseAccess(primaryUpsert.data) }, { status: 201 });
+    const response = NextResponse.json(
+      { data: mapCourseAccess(primaryUpsert.data) },
+      { status: 201 }
+    );
+    applyRefreshedSessionCookies(response, session);
+    return response;
   }
 
   const fallbackPayload = {
@@ -158,5 +168,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: fallbackUpsert.error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data: mapCourseAccess(fallbackUpsert.data) }, { status: 201 });
+  const response = NextResponse.json(
+    { data: mapCourseAccess(fallbackUpsert.data) },
+    { status: 201 }
+  );
+  applyRefreshedSessionCookies(response, session);
+  return response;
 }

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getAuthenticatedProfile, mapUserProfile } from "@/lib/serverAuth";
+import {
+  applyRefreshedSessionCookies,
+  getAuthenticatedProfile,
+  mapUserProfile,
+} from "@/lib/serverAuth";
 
 export const runtime = "nodejs";
 
@@ -67,5 +71,7 @@ export async function PUT(
     );
   }
 
-  return NextResponse.json({ data: mapUserProfile(data) });
+  const response = NextResponse.json({ data: mapUserProfile(data) });
+  applyRefreshedSessionCookies(response, session);
+  return response;
 }

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin, getSupabaseAuthClient } from "@/lib/supabase";
-import { getAuthenticatedProfile, mapUserProfile } from "@/lib/serverAuth";
+import {
+  applyRefreshedSessionCookies,
+  getAuthenticatedProfile,
+  mapUserProfile,
+} from "@/lib/serverAuth";
 
 export const runtime = "nodejs";
 
@@ -10,7 +14,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  return NextResponse.json({ data: session.profile });
+  const response = NextResponse.json({ data: session.profile });
+  applyRefreshedSessionCookies(response, session);
+  return response;
 }
 
 export async function PUT(request: NextRequest) {
@@ -110,5 +116,7 @@ export async function PUT(request: NextRequest) {
     updatedProfile = mapUserProfile(data);
   }
 
-  return NextResponse.json({ data: updatedProfile });
+  const response = NextResponse.json({ data: updatedProfile });
+  applyRefreshedSessionCookies(response, session);
+  return response;
 }
