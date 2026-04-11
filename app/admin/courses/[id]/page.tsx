@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { getUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { getCourse as getCourseById, updateCourse as updateCourseById } from "@/lib/services/courseApi";
 import type { Course, CourseModule } from "@/types/course";
@@ -25,7 +24,7 @@ function toEditableCourse(course: Course): EditableCourse {
 
 export default function EditCoursePage() {
 	const router = useRouter();
-	const { logout } = useAuth();
+	const { user: authUser, logout } = useAuth();
 	const params = useParams();
 	const courseId = params?.id as string;
 
@@ -40,12 +39,16 @@ export default function EditCoursePage() {
 
 	// Protect route: only admin can access
 	useEffect(() => {
-		const stored = getUser() as any;
-		if (!stored || stored.role !== "admin") {
+		if (!authUser) {
+			router.replace("/login");
+			return;
+		}
+
+		if (authUser.role !== "admin") {
 			router.replace("/dashboard");
 			return;
 		}
-		setUser(stored);
+		setUser(authUser);
 
 		const loadCourse = async () => {
 			try {
@@ -64,7 +67,7 @@ export default function EditCoursePage() {
 		};
 
 		void loadCourse();
-	}, [router, courseId]);
+	}, [authUser, router, courseId]);
 
 	const selectedModule = useMemo(
 		() => course?.modules.find((m) => m.id === selectedModuleId) || null,

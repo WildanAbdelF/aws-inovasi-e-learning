@@ -36,4 +36,6 @@ export {
   createMyCourseAccess,
   listMyCertificates,
   issueMyCertificate,
+  getMyProgress,
+  markMyProgress,
 } from "./userApi";

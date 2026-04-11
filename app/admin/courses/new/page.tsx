@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { createCourse } from "@/lib/services/courseApi";
 import {
@@ -46,6 +45,7 @@ function createEmptyCourseDraft(): CourseDraft {
 		price: 0,
 		image: "",
 		description: "",
+		curriculum: [],
 		modules: [firstModule],
 	};
 }
@@ -269,7 +269,7 @@ function QuizEditor({
 
 export default function NewCoursePage() {
 	const router = useRouter();
-	const { logout } = useAuth();
+	const { user: authUser, logout } = useAuth();
 	const [loading, setLoading] = useState(true);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const [user, setUser] = useState<any>(null);
@@ -281,12 +281,16 @@ export default function NewCoursePage() {
 
 	// Protect route: only admin can access
 	useEffect(() => {
-		const stored = getUser() as any;
-		if (!stored || stored.role !== "admin") {
+		if (!authUser) {
+			router.replace("/login");
+			return;
+		}
+
+		if (authUser.role !== "admin") {
 			router.replace("/dashboard");
 			return;
 		}
-		setUser(stored);
+		setUser(authUser);
 
 		// Create new empty course
 		const empty = createEmptyCourseDraft();
@@ -294,7 +298,7 @@ export default function NewCoursePage() {
 		setSelectedModuleId(empty.modules[0].id);
 		setSelectedItemId(empty.modules[0].items[0].id);
 		setLoading(false);
-	}, [router]);
+	}, [authUser, router]);
 
 	const selectedModule = useMemo(
 		() => course?.modules.find((m) => m.id === selectedModuleId) || null,
@@ -327,9 +331,14 @@ export default function NewCoursePage() {
 
 			setIsSaving(true);
 			try {
+				const curriculum = (course.curriculum ?? [])
+					.map((entry) => entry.trim())
+					.filter((entry) => entry.length > 0);
+
 				const payload: Course = {
 					...course,
 					author: course.author?.trim() || user?.name || "Admin",
+					curriculum,
 				};
 				await createCourse(payload);
 				setSuccessDialogOpen(true);
@@ -552,6 +561,25 @@ export default function NewCoursePage() {
 										value={course.description || ""}
 										onChange={(e) =>
 											updateCourse((c) => ({ ...c, description: e.target.value }))
+										}
+									/>
+								</div>
+
+								<div>
+									<label className="block text-xs font-medium text-neutral-700 mb-1">
+										Kurikulum (satu baris per poin)
+									</label>
+									<textarea
+										className="w-full border rounded-lg px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+										placeholder={"Contoh:\nPengenalan React\nState & Props\nRouting"}
+										value={(course.curriculum ?? []).join("\n")}
+										onChange={(e) =>
+											updateCourse((c) => ({
+												...c,
+												curriculum: e.target.value
+													.split("\n")
+													.map((entry) => entry.trimStart()),
+											}))
 										}
 									/>
 								</div>

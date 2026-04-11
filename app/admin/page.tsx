@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers/AuthProvider";
 import type { Course, CourseModule } from "@/types/course";
 import { listCourses, deleteCourse } from "@/lib/services/courseApi";
@@ -25,7 +24,7 @@ function toManagedCourse(course: Course): ManagedCourse {
 
 export default function AdminManagementPage() {
 	const router = useRouter();
-	const { logout } = useAuth();
+	const { user: authUser, logout } = useAuth();
 	const [loading, setLoading] = useState(true);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const [user, setUser] = useState<any>(null);
@@ -36,12 +35,16 @@ export default function AdminManagementPage() {
 
 	// Protect route: only admin can access
 	useEffect(() => {
-		const stored = getUser() as any;
-		if (!stored || stored.role !== "admin") {
+		if (!authUser) {
+			router.replace("/login");
+			return;
+		}
+
+		if (authUser.role !== "admin") {
 			router.replace("/dashboard");
 			return;
 		}
-		setUser(stored);
+		setUser(authUser);
 
 		const loadCourses = async () => {
 			try {
@@ -56,7 +59,7 @@ export default function AdminManagementPage() {
 		};
 
 		void loadCourses();
-	}, [router]);
+	}, [authUser, router]);
 
 	const handleDeleteCourse = async () => {
 		if (!courseToDelete) return;

@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUser } from "@/lib/localStorageHelper";
-import { getRegisteredUsers } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { listUsersForAdmin } from "@/lib/services/userApi";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -22,19 +21,30 @@ export default function AdminDashboardPage() {
 
   // Protect route: only admin can access
   useEffect(() => {
-    const stored = getUser() as any;
-    if (!stored || stored.role !== "admin") {
+    if (!authUser) {
+      router.replace("/login");
+      return;
+    }
+
+    if (authUser.role !== "admin") {
       router.replace("/dashboard");
       return;
     }
-    setUser(stored);
+    setUser(authUser);
 
-    // Get real user count
-    const users = getRegisteredUsers();
-    setStats((prev) => ({ ...prev, activeUsers: users.length }));
+    const loadStats = async () => {
+      try {
+        const users = await listUsersForAdmin();
+        setStats((prev) => ({ ...prev, activeUsers: users.length }));
+      } catch (error) {
+        console.error("Failed to load admin users stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setLoading(false);
-  }, [router]);
+    void loadStats();
+  }, [authUser, router]);
 
   if (loading) {
     return (

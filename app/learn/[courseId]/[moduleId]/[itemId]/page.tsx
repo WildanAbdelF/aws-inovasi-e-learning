@@ -7,12 +7,13 @@ import { Certificate } from "@/lib/localStorageHelper";
 import type { Course, CourseModule, QuizQuestion } from "@/types/course";
 import CertificateModal from "@/components/certificate/CertificateModal";
 import {
+	getMyProgress,
 	issueMyCertificate,
 	listMyCourseAccesses,
+	markMyProgress,
 } from "@/lib/services/userApi";
 import { useAuth } from "@/components/providers/AuthProvider";
 
-type ProgressMap = Record<string, string[]>;
 type LearnCourse = Course & { modules: CourseModule[] };
 
 function normalizeLearnCourse(course: Course): LearnCourse {
@@ -21,9 +22,6 @@ function normalizeLearnCourse(course: Course): LearnCourse {
 		modules: Array.isArray(course.modules) ? course.modules : [],
 	};
 }
-
-// Progress key is now per-user
-const getProgressKey = (userEmail: string) => `lms_course_progress_${userEmail}`;
 
 export default function LearnDetailPage() {
 	const router = useRouter();
@@ -119,27 +117,32 @@ export default function LearnDetailPage() {
 
 	useEffect(() => {
 		if (!isAuthorized || !course || !currentUserEmail) return;
-		const progressKey = getProgressKey(currentUserEmail);
-		const raw = window.localStorage.getItem(progressKey);
-		let parsed: ProgressMap = {};
-		if (raw) {
+
+		const syncProgress = async () => {
 			try {
-				parsed = JSON.parse(raw) as ProgressMap;
-			} catch {
-				parsed = {};
+				const result = await getMyProgress(course.id);
+				const serverProgress = result.completedItemIds;
+				if (!serverProgress.includes(itemId)) {
+					await markMyProgress({
+						courseId: course.id,
+						moduleId,
+						itemId,
+						completed: true,
+					});
+					setProgress([...serverProgress, itemId]);
+				} else {
+					setProgress(serverProgress);
+				}
+			} catch (error) {
+				console.error("Failed to sync learning progress:", error);
+				setProgress([]);
+			} finally {
+				setProgressLoaded(true);
 			}
-		}
-		const list = parsed[course.id] ?? [];
-		if (!list.includes(itemId)) {
-			const updated = [...list, itemId];
-			parsed[course.id] = updated;
-			window.localStorage.setItem(progressKey, JSON.stringify(parsed));
-			setProgress(updated);
-		} else {
-			setProgress(list);
-		}
-		setProgressLoaded(true);
-	}, [isAuthorized, course, itemId, currentUserEmail]);
+		};
+
+		void syncProgress();
+	}, [isAuthorized, course, itemId, moduleId, currentUserEmail]);
 
 	const flattenedLessons = useMemo(() => {
 		return modules.flatMap((module) =>

@@ -27,6 +27,18 @@ export type CourseAccessPayload = {
   accessType: "lifetime" | "subscription";
 };
 
+export type UserProgressPayload = {
+  courseId: string;
+  moduleId: string;
+  itemId: string;
+  completed?: boolean;
+};
+
+export type UserProgressResponse = {
+  courseId: string;
+  completedItemIds: string[];
+};
+
 type ApiResponse<T> = {
   data: T;
 };
@@ -189,4 +201,33 @@ export async function issueMyCertificate(courseId: string): Promise<UserCertific
 
   const payload = (await response.json()) as ApiResponse<UserCertificate>;
   return payload.data;
+}
+
+export async function getMyProgress(courseId: string): Promise<UserProgressResponse> {
+  const response = await fetch(`/api/users/me/progress?courseId=${encodeURIComponent(courseId)}`, {
+    method: "GET",
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, "Failed to fetch learning progress."));
+  }
+
+  const payload = (await response.json()) as ApiResponse<UserProgressResponse>;
+  return payload.data;
+}
+
+export async function markMyProgress(payload: UserProgressPayload): Promise<void> {
+  const response = await fetch("/api/users/me/progress", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, "Failed to save learning progress."));
+  }
 }
