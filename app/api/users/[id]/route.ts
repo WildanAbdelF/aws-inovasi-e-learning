@@ -72,6 +72,6 @@ export async function PUT(
   }
 
   const response = NextResponse.json({ data: mapUserProfile(data) });
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }

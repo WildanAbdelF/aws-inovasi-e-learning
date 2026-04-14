@@ -126,9 +126,10 @@ export async function getAuthenticatedProfile(
 
 export function applyRefreshedSessionCookies(
   response: NextResponse,
-  session: { refreshedSession?: Session }
+  session: { refreshedSession?: Session },
+  request?: Request
 ) {
   if (session.refreshedSession) {
-    setAuthCookies(response, session.refreshedSession);
+    setAuthCookies(response, session.refreshedSession, request);
   }
 }

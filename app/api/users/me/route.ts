@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.json({ data: session.profile });
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }
 
@@ -117,6 +117,6 @@ export async function PUT(request: NextRequest) {
   }
 
   const response = NextResponse.json({ data: updatedProfile });
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }

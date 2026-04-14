@@ -13,6 +13,6 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.json({ data: session.profile });
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }

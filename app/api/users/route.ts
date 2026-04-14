@@ -36,6 +36,6 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.json({ data: (data ?? []).map(mapUserProfile) });
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }

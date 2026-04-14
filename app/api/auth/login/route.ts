@@ -83,6 +83,6 @@ export async function POST(request: Request) {
     },
   });
 
-  setAuthCookies(response, authData.session);
+  setAuthCookies(response, authData.session, request);
   return response;
 }

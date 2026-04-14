@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.json({ data: (data ?? []).map(mapCourseAccess) });
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }
 
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       { data: mapCourseAccess(primaryUpsert.data) },
       { status: 201 }
     );
-    applyRefreshedSessionCookies(response, session);
+    applyRefreshedSessionCookies(response, session, request);
     return response;
   }
 
@@ -172,6 +172,6 @@ export async function POST(request: NextRequest) {
     { data: mapCourseAccess(fallbackUpsert.data) },
     { status: 201 }
   );
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }

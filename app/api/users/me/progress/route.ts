@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import {
@@ -8,10 +7,39 @@ import {
 
 export const runtime = "nodejs";
 
+const PROGRESS_ID_PREFIX = "progress::";
+
+function buildProgressRowId(userId: string, courseId: string, itemId: string) {
+  return `${PROGRESS_ID_PREFIX}${userId}::${encodeURIComponent(courseId)}::${encodeURIComponent(itemId)}`;
+}
+
+function decodeItemIdFromRow(row: any): string | null {
+  if (typeof row?.item_id === "string" && row.item_id.trim()) {
+    return row.item_id;
+  }
+
+  if (typeof row?.id !== "string" || !row.id.startsWith(PROGRESS_ID_PREFIX)) {
+    return null;
+  }
+
+  const parts = row.id.split("::");
+  if (parts.length < 4) return null;
+
+  try {
+    return decodeURIComponent(parts[3]);
+  } catch {
+    return null;
+  }
+}
+
 function normalizeItemIds(rows: any[]) {
-  return rows
-    .map((row) => (typeof row?.item_id === "string" ? row.item_id : ""))
-    .filter((id) => Boolean(id));
+  return Array.from(
+    new Set(
+      rows
+        .map((row) => decodeItemIdFromRow(row))
+        .filter((id): id is string => Boolean(id))
+    )
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -32,7 +60,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("user_progress")
-    .select("item_id")
+    .select("id, item_id")
     .eq("user_id", session.profile.id)
     .eq("course_id", courseId)
     .eq("completed", true);
@@ -47,7 +75,7 @@ export async function GET(request: NextRequest) {
       completedItemIds: normalizeItemIds(data ?? []),
     },
   });
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }
 
@@ -64,7 +92,6 @@ export async function PUT(request: NextRequest) {
 
   const body = await request.json();
   const courseId = typeof body.courseId === "string" ? body.courseId.trim() : "";
-  const moduleId = typeof body.moduleId === "string" ? body.moduleId.trim() : "";
   const itemId = typeof body.itemId === "string" ? body.itemId.trim() : "";
   const completed = body.completed !== false;
 
@@ -75,45 +102,28 @@ export async function PUT(request: NextRequest) {
     );
   }
 
+  const progressRowId = buildProgressRowId(session.profile.id, courseId, itemId);
+
   const payload = {
+    id: progressRowId,
     user_id: session.profile.id,
     course_id: courseId,
-    module_id: moduleId || null,
-    item_id: itemId,
+    module_id: null,
+    item_id: null,
     completed,
   };
 
-  const existingRowResult = await supabaseAdmin
+  const writeResult = await supabaseAdmin
     .from("user_progress")
-    .select("id")
-    .eq("user_id", session.profile.id)
-    .eq("course_id", courseId)
-    .eq("item_id", itemId)
-    .limit(1)
-    .maybeSingle();
-
-  if (existingRowResult.error) {
-    return NextResponse.json({ error: existingRowResult.error.message }, { status: 500 });
-  }
-
-  const writeResult = existingRowResult.data?.id
-    ? await supabaseAdmin
-        .from("user_progress")
-        .update(payload)
-        .eq("id", existingRowResult.data.id)
-        .select("item_id, completed")
-        .single()
-    : await supabaseAdmin
-        .from("user_progress")
-        .insert({ id: `progress_${randomUUID()}`, ...payload })
-        .select("item_id, completed")
-        .single();
+    .upsert(payload, { onConflict: "id" })
+    .select("id, item_id, completed")
+    .single();
 
   if (writeResult.error) {
     return NextResponse.json({ error: writeResult.error.message }, { status: 500 });
   }
 
   const response = NextResponse.json({ data: writeResult.data });
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }

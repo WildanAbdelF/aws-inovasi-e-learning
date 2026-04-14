@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.json({
     data: (data ?? []).map((row: any) => mapCertificate(row, session.profile)),
   });
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }
 
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
 
   if (existing) {
     const response = NextResponse.json({ data: mapCertificate(existing, session.profile) });
-    applyRefreshedSessionCookies(response, session);
+    applyRefreshedSessionCookies(response, session, request);
     return response;
   }
 
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
       { data: mapCertificate(primaryInsert.data, session.profile) },
       { status: 201 }
     );
-    applyRefreshedSessionCookies(response, session);
+    applyRefreshedSessionCookies(response, session, request);
     return response;
   }
 
@@ -181,6 +181,6 @@ export async function POST(request: NextRequest) {
     { data: mapCertificate(fallbackInsert.data, session.profile) },
     { status: 201 }
   );
-  applyRefreshedSessionCookies(response, session);
+  applyRefreshedSessionCookies(response, session, request);
   return response;
 }

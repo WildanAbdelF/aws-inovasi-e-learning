@@ -108,7 +108,7 @@ export async function POST(request: Request) {
   );
 
   if (session) {
-    setAuthCookies(response, session);
+    setAuthCookies(response, session, request);
   }
 
   return response;

@@ -28,6 +28,7 @@ export async function loginWithApi(email: string, password: string): Promise<Api
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
     cache: "no-store",
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -48,6 +49,7 @@ export async function registerWithApi(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password }),
     cache: "no-store",
+    credentials: "include",
   });
 
   if (!response.ok) {
