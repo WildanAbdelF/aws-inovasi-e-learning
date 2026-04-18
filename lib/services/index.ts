@@ -38,4 +38,5 @@ export {
   issueMyCertificate,
   getMyProgress,
   markMyProgress,
+  getAdminDashboardMetrics,
 } from "./userApi";

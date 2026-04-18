@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { listUsersForAdmin } from "@/lib/services/userApi";
+import { getAdminDashboardMetrics } from "@/lib/services/userApi";
+import type { AdminRecentActivity, AdminRevenueSeriesPoint } from "@/types/user";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -13,11 +14,13 @@ export default function AdminDashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState({
-    totalRevenue: 120500000,
+    totalRevenue: 0,
     activeUsers: 0,
-    activeSubscriptions: 850,
-    totalEnrollments: 3150,
+    activeSubscriptions: 0,
+    totalEnrollments: 0,
   });
+  const [recentActivity, setRecentActivity] = useState<AdminRecentActivity[]>([]);
+  const [revenueSeries, setRevenueSeries] = useState<AdminRevenueSeriesPoint[]>([]);
 
   // Protect route: only admin can access
   useEffect(() => {
@@ -34,10 +37,25 @@ export default function AdminDashboardPage() {
 
     const loadStats = async () => {
       try {
-        const users = await listUsersForAdmin();
-        setStats((prev) => ({ ...prev, activeUsers: users.length }));
+        const metrics = await getAdminDashboardMetrics();
+        setStats({
+          totalRevenue: metrics.totalRevenue,
+          activeUsers: metrics.activeUsers,
+          activeSubscriptions: metrics.activeSubscriptions,
+          totalEnrollments: metrics.totalEnrollments,
+        });
+        setRecentActivity(metrics.recentActivity);
+        setRevenueSeries(metrics.revenueSeries);
       } catch (error) {
-        console.error("Failed to load admin users stats:", error);
+        console.error("Failed to load admin dashboard metrics:", error);
+        setStats({
+          totalRevenue: 0,
+          activeUsers: 0,
+          activeSubscriptions: 0,
+          totalEnrollments: 0,
+        });
+        setRecentActivity([]);
+        setRevenueSeries([]);
       } finally {
         setLoading(false);
       }
@@ -54,11 +72,15 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const recentActivity = [
-    { name: "Budi Santoso", action: 'enrolled in "React JS"', time: "2m ago", avatar: "🧑" },
-    { name: "Siti Aminah", action: "just registered", time: "15m ago", avatar: "👩" },
-    { name: "Eko Prasetyo", action: 'enrolled in "Data Science"', time: "1h ago", avatar: "👨" },
-  ];
+  const chartPoints = revenueSeries.slice(-10);
+  const maxRevenue = chartPoints.reduce(
+    (max, point) => Math.max(max, point.totalRevenue),
+    0
+  );
+  const revenueLast30Days = revenueSeries.reduce(
+    (acc, point) => acc + point.totalRevenue,
+    0
+  );
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -234,28 +256,42 @@ export default function AdminDashboardPage() {
             data-aos-duration="500"
           >
             <h3 className="text-base sm:text-lg font-bold text-neutral-900 mb-1">Revenue Analytics</h3>
-            <p className="text-xs text-neutral-500 mb-3 sm:mb-4">Last 30 Days</p>
-            {/* Simple Chart SVG */}
-            <div className="h-40 sm:h-48 flex items-end justify-between gap-1">
-              <svg viewBox="0 0 400 120" className="w-full h-full">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0 100 Q20 80, 40 70 T80 50 T120 60 T160 30 T200 45 T240 35 T280 55 T320 40 T360 60 T400 50"
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="2"
-                />
-                <path
-                  d="M0 100 Q20 80, 40 70 T80 50 T120 60 T160 30 T200 45 T240 35 T280 55 T320 40 T360 60 T400 50 V120 H0 Z"
-                  fill="url(#chartGradient)"
-                />
-              </svg>
-            </div>
+            <p className="text-xs text-neutral-500 mb-3 sm:mb-4">30 hari terakhir</p>
+            <p className="text-sm text-neutral-700 mb-4">
+              Pendapatan 30 hari: <span className="font-semibold">Rp {revenueLast30Days.toLocaleString("id-ID")}</span>
+            </p>
+
+            {chartPoints.length === 0 ? (
+              <p className="text-sm text-neutral-500">Belum ada data pendapatan untuk ditampilkan.</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="h-40 sm:h-48 flex items-end gap-2">
+                  {chartPoints.map((point) => {
+                    const heightPercent =
+                      maxRevenue > 0
+                        ? Math.max(8, Math.round((point.totalRevenue / maxRevenue) * 100))
+                        : 8;
+
+                    return (
+                      <div key={point.date} className="flex-1 flex flex-col items-center justify-end">
+                        <div
+                          title={`${point.label}: Rp ${point.totalRevenue.toLocaleString("id-ID")}`}
+                          className="w-full rounded-t-md bg-gradient-to-t from-red-600 to-red-400 transition-all duration-300"
+                          style={{ height: `${heightPercent}%` }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="grid grid-cols-10 gap-2 text-[10px] text-neutral-500">
+                  {chartPoints.map((point) => (
+                    <p key={`${point.date}-label`} className="text-center truncate">
+                      {point.label}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quick Actions */}
@@ -291,8 +327,11 @@ export default function AdminDashboardPage() {
         >
           <h3 className="text-base sm:text-lg font-bold text-neutral-900 mb-4">Recent Activity</h3>
           <div className="space-y-3 sm:space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-start sm:items-center justify-between gap-2 sm:gap-3 pb-3 sm:pb-4 border-b last:border-b-0">
+            {recentActivity.length === 0 ? (
+              <p className="text-sm text-neutral-500">Belum ada aktivitas terbaru.</p>
+            ) : null}
+            {recentActivity.map((activity) => (
+              <div key={activity.id} className="flex items-start sm:items-center justify-between gap-2 sm:gap-3 pb-3 sm:pb-4 border-b last:border-b-0">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-neutral-100 flex items-center justify-center text-sm sm:text-lg flex-shrink-0">
                     {activity.avatar}

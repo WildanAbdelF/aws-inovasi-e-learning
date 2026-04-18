@@ -158,6 +158,10 @@ create index if not exists idx_module_contents_module_id on public.module_conten
 create index if not exists idx_quiz_questions_item_id on public.quiz_questions(item_id);
 create index if not exists idx_user_courses_user_id on public.user_courses(user_id);
 create index if not exists idx_user_courses_course_id on public.user_courses(course_id);
+create index if not exists idx_user_courses_created_at on public.user_courses(created_at desc);
+create index if not exists idx_user_courses_access_type_expires_at on public.user_courses(access_type, expires_at);
+create index if not exists idx_user_courses_price_paid_not_null on public.user_courses(price_paid)
+  where price_paid is not null;
 create index if not exists idx_user_progress_user_id on public.user_progress(user_id);
 create index if not exists idx_user_progress_course_id on public.user_progress(course_id);
 create index if not exists idx_certificates_user_id on public.certificates(user_id);

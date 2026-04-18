@@ -3,6 +3,7 @@ import type {
   UserRole,
   UserCourseAccess,
   UserCertificate,
+  AdminDashboardMetrics,
 } from "@/types/user";
 
 export type AdminUserUpdatePayload = {
@@ -230,4 +231,19 @@ export async function markMyProgress(payload: UserProgressPayload): Promise<void
   if (!response.ok) {
     throw new Error(await readError(response, "Failed to save learning progress."));
   }
+}
+
+export async function getAdminDashboardMetrics(): Promise<AdminDashboardMetrics> {
+  const response = await fetch("/api/admin/metrics", {
+    method: "GET",
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, "Failed to fetch admin metrics."));
+  }
+
+  const payload = (await response.json()) as ApiResponse<AdminDashboardMetrics>;
+  return payload.data;
 }
