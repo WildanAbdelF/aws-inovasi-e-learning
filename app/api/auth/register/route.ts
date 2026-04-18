@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getSupabaseAuthClient } from "@/lib/supabase";
 import { setAuthCookies } from "@/lib/authCookies";
+import { resolveAppBaseUrl } from "@/lib/appUrl";
 
 export const runtime = "nodejs";
 
@@ -34,10 +35,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const appUrl = resolveAppBaseUrl(request);
+  const emailRedirectTo = appUrl ? `${appUrl}/login` : undefined;
+
   const { data: signUpData, error: signUpError } = await supabaseAuth.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo,
       data: {
         name,
       },

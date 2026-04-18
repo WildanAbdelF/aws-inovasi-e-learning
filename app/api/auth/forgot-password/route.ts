@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAuthClient } from "@/lib/supabase";
+import { resolveAppBaseUrl } from "@/lib/appUrl";
 
 export const runtime = "nodejs";
 
@@ -19,10 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email is required." }, { status: 400 });
   }
 
-  const originHeader = request.headers.get("origin");
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (typeof originHeader === "string" && originHeader.trim() ? originHeader : "");
+  const appUrl = resolveAppBaseUrl(request);
 
   const redirectTo = appUrl
     ? `${appUrl.replace(/\/$/, "")}/forgot-password/reset`
