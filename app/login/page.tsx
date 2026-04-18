@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import {
@@ -21,6 +21,47 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const sensitiveKeys = [
+      "access_token",
+      "refresh_token",
+      "expires_in",
+      "expires_at",
+      "token_type",
+      "provider_token",
+      "provider_refresh_token",
+      "token_hash",
+      "code",
+      "type",
+    ];
+
+    const currentUrl = new URL(window.location.href);
+    let hasSensitiveData = false;
+
+    for (const key of sensitiveKeys) {
+      if (currentUrl.searchParams.has(key)) {
+        currentUrl.searchParams.delete(key);
+        hasSensitiveData = true;
+      }
+    }
+
+    const hashParams = new URLSearchParams(currentUrl.hash.replace(/^#/, ""));
+    for (const key of sensitiveKeys) {
+      if (hashParams.has(key)) {
+        hasSensitiveData = true;
+        break;
+      }
+    }
+
+    if (!hasSensitiveData) return;
+
+    const cleanedSearch = currentUrl.searchParams.toString();
+    const cleanedUrl = `${currentUrl.pathname}${cleanedSearch ? `?${cleanedSearch}` : ""}`;
+    window.history.replaceState({}, document.title, cleanedUrl);
+  }, []);
 
   const form = useForm({
     defaultValues: {
