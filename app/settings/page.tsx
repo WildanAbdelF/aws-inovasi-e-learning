@@ -384,21 +384,27 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
                 <Button
-                  onClick={handleSaveProfile}
-                  className="bg-blue-900 hover:bg-blue-950 w-full sm:w-auto"
-                >
-                  Simpan Perubahan
-                </Button>
-                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => {
                     logout();
                     router.push("/");
                   }}
-                  className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+                  className="w-full sm:w-auto border-red-600 bg-white text-red-600 hover:border-red-600 hover:bg-red-600 hover:text-white"
                 >
+                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
                   Logout
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  className="w-full sm:w-auto bg-blue-900 hover:bg-blue-950"
+                >
+                  Simpan Perubahan
                 </Button>
               </div>
             </div>

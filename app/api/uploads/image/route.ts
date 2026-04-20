@@ -20,6 +20,58 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
 
 type UploadTarget = "course-thumbnail" | "course-material";
 
+function isSafeObjectPath(path: string): boolean {
+  if (!path) return false;
+  if (path.includes("..")) return false;
+  if (path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) {
+    return false;
+  }
+
+  return true;
+}
+
+function extractObjectPathFromPublicUrl(publicUrl: string, bucket: string): string | null {
+  try {
+    const parsed = new URL(publicUrl);
+    const markerCandidates = [
+      `/storage/v1/object/public/${bucket}/`,
+      `/object/public/${bucket}/`,
+    ];
+
+    for (const marker of markerCandidates) {
+      const markerIndex = parsed.pathname.indexOf(marker);
+      if (markerIndex === -1) continue;
+
+      const rawPath = parsed.pathname.slice(markerIndex + marker.length);
+      const decodedPath = decodeURIComponent(rawPath).trim();
+      return isSafeObjectPath(decodedPath) ? decodedPath : null;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function resolveOldObjectPath(formData: FormData, bucket: string): string | null {
+  const oldPathEntry = formData.get("oldPath");
+  if (typeof oldPathEntry === "string") {
+    const oldPath = oldPathEntry.trim();
+    if (isSafeObjectPath(oldPath)) {
+      return oldPath;
+    }
+  }
+
+  const oldUrlEntry = formData.get("oldUrl");
+  if (typeof oldUrlEntry === "string") {
+    const oldUrl = oldUrlEntry.trim();
+    if (!oldUrl) return null;
+    return extractObjectPathFromPublicUrl(oldUrl, bucket);
+  }
+
+  return null;
+}
+
 function sanitizePathSegment(value: string, fallback: string): string {
   const sanitized = value
     .trim()
@@ -133,6 +185,7 @@ export async function POST(request: NextRequest) {
   const objectPath = buildObjectPath(formData, target, extension);
   const fileBuffer = Buffer.from(await file.arrayBuffer());
   const bucket = getCourseMediaBucket();
+  const oldObjectPath = resolveOldObjectPath(formData, bucket);
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from(bucket)
@@ -144,6 +197,16 @@ export async function POST(request: NextRequest) {
 
   if (uploadError) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
+  }
+
+  if (oldObjectPath && oldObjectPath !== objectPath) {
+    const { error: removeError } = await supabaseAdmin.storage
+      .from(bucket)
+      .remove([oldObjectPath]);
+
+    if (removeError) {
+      console.warn("Failed to remove previous image:", removeError.message);
+    }
   }
 
   const { data: publicData } = supabaseAdmin.storage

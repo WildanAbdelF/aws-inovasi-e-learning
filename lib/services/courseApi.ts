@@ -11,6 +11,7 @@ export interface UploadCourseImageParams {
   courseId?: string;
   moduleId?: string;
   itemId?: string;
+  oldUrl?: string | null;
 }
 
 export async function listCourses(): Promise<Course[]> {
@@ -112,6 +113,9 @@ export async function uploadCourseImage(
   }
   if (params.itemId) {
     formData.set("itemId", params.itemId);
+  }
+  if (typeof params.oldUrl === "string" && params.oldUrl.trim()) {
+    formData.set("oldUrl", params.oldUrl.trim());
   }
 
   const response = await fetch(imageUploadUrl, {

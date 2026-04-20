@@ -188,7 +188,7 @@ export default function UserManagementPage() {
                 logout();
                 router.push("/");
               }}
-              className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-red-600 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-600 hover:text-white transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
