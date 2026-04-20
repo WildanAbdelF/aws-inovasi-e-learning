@@ -4,8 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { getCourse as getCourseById, updateCourse as updateCourseById } from "@/lib/services/courseApi";
-import type { Course, CourseModule } from "@/types/course";
+import {
+	getCourse as getCourseById,
+	uploadCourseImage,
+	updateCourse as updateCourseById,
+} from "@/lib/services/courseApi";
+import type { Course, CourseModule, CourseModuleContent } from "@/types/course";
 import {
 	Dialog,
 	DialogContent,
@@ -36,6 +40,8 @@ export default function EditCoursePage() {
 	const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 	const [notFound, setNotFound] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isUploadingCourseImage, setIsUploadingCourseImage] = useState(false);
+	const [isUploadingItemImage, setIsUploadingItemImage] = useState(false);
 
 	// Protect route: only admin can access
 	useEffect(() => {
@@ -84,6 +90,75 @@ export default function EditCoursePage() {
 			if (!prev) return prev;
 			return updater(prev);
 		});
+	};
+
+	const updateSelectedItem = (
+		updater: (item: CourseModuleContent) => CourseModuleContent
+	) => {
+		if (!selectedModuleId || !selectedItemId) return;
+
+		updateCourse((c) => ({
+			...c,
+			modules: c.modules.map((m) => {
+				if (m.id !== selectedModuleId) return m;
+				return {
+					...m,
+					items: m.items.map((it) =>
+						it.id === selectedItemId ? updater(it) : it
+					),
+				};
+			}),
+		}));
+	};
+
+	const handleCourseThumbnailUpload = async (file: File | null) => {
+		if (!file || !course) return;
+		if (!file.type.startsWith("image/")) {
+			window.alert("File harus berupa gambar.");
+			return;
+		}
+
+		setIsUploadingCourseImage(true);
+		try {
+			const uploadedUrl = await uploadCourseImage({
+				file,
+				target: "course-thumbnail",
+				courseId: course.id,
+			});
+
+			updateCourse((c) => ({ ...c, image: uploadedUrl }));
+		} catch (error) {
+			console.error("Failed to upload thumbnail:", error);
+			window.alert("Gagal upload thumbnail kursus.");
+		} finally {
+			setIsUploadingCourseImage(false);
+		}
+	};
+
+	const handleItemImageUpload = async (file: File | null) => {
+		if (!file || !course || !selectedModule || !selectedItem) return;
+		if (!file.type.startsWith("image/")) {
+			window.alert("File harus berupa gambar.");
+			return;
+		}
+
+		setIsUploadingItemImage(true);
+		try {
+			const uploadedUrl = await uploadCourseImage({
+				file,
+				target: "course-material",
+				courseId: course.id,
+				moduleId: selectedModule.id,
+				itemId: selectedItem.id,
+			});
+
+			updateSelectedItem((item) => ({ ...item, mediaUrl: uploadedUrl }));
+		} catch (error) {
+			console.error("Failed to upload material image:", error);
+			window.alert("Gagal upload gambar materi.");
+		} finally {
+			setIsUploadingItemImage(false);
+		}
 	};
 
 	const handleSave = async () => {
@@ -321,16 +396,41 @@ export default function EditCoursePage() {
 
 								<div>
 									<label className="block text-xs font-medium text-neutral-700 mb-1">
-										Thumbnail Kursus (URL)
+										Thumbnail Kursus <span className="text-red-500">*</span>
 									</label>
-									<input
-										className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-										placeholder="https://..."
-										value={course.image}
-										onChange={(e) =>
-											updateCourse((c) => ({ ...c, image: e.target.value }))
-										}
-									/>
+									<div className="space-y-2">
+										<input
+											type="file"
+											accept="image/png,image/jpeg,image/webp,image/gif"
+											className="w-full border rounded-lg px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-blue-700"
+											onChange={(e) => {
+												const file = e.target.files?.[0] ?? null;
+												void handleCourseThumbnailUpload(file);
+												e.currentTarget.value = "";
+											}}
+										/>
+										{isUploadingCourseImage && (
+											<p className="text-xs text-neutral-500">Mengunggah thumbnail...</p>
+										)}
+										{course.image ? (
+											<div className="rounded-lg border p-2 space-y-2">
+												<img
+													src={course.image}
+													alt="Thumbnail kursus"
+													className="w-full h-32 object-cover rounded"
+												/>
+												<button
+													type="button"
+													onClick={() => updateCourse((c) => ({ ...c, image: "" }))}
+													className="text-xs text-red-600 hover:text-red-700"
+												>
+													Hapus thumbnail
+												</button>
+											</div>
+										) : (
+											<p className="text-xs text-neutral-500">Belum ada thumbnail.</p>
+										)}
+									</div>
 								</div>
 
 								<div>
@@ -587,30 +687,41 @@ export default function EditCoursePage() {
 								<div className="grid md:grid-cols-2 gap-4">
 									<div>
 										<label className="block text-xs font-medium text-neutral-700 mb-1">
-											URL Gambar / Thumbnail (opsional)
+											Upload Gambar Materi (opsional)
 										</label>
-										<input
-											className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-											placeholder="https://..."
-											value={selectedItem.mediaUrl || ""}
-											onChange={(e) => {
-												const value = e.target.value;
-												updateCourse((c) => ({
-													...c,
-													modules: c.modules.map((m) => {
-														if (m.id !== selectedModule.id) return m;
-														return {
-															...m,
-															items: m.items.map((it) =>
-																it.id === selectedItem.id
-																	? { ...it, mediaUrl: value }
-																	: it
-															),
-														};
-													}),
-												}));
-											}}
-										/>
+										<div className="space-y-2">
+											<input
+												type="file"
+												accept="image/png,image/jpeg,image/webp,image/gif"
+												className="w-full border rounded-lg px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-blue-700"
+												onChange={(e) => {
+													const file = e.target.files?.[0] ?? null;
+													void handleItemImageUpload(file);
+													e.currentTarget.value = "";
+												}}
+											/>
+											{isUploadingItemImage && (
+												<p className="text-xs text-neutral-500">Mengunggah gambar materi...</p>
+											)}
+											{selectedItem.mediaUrl ? (
+												<div className="rounded-lg border p-2 space-y-2">
+													<img
+														src={selectedItem.mediaUrl}
+														alt="Gambar materi"
+														className="w-full h-28 object-cover rounded"
+													/>
+													<button
+														type="button"
+														onClick={() => updateSelectedItem((item) => ({ ...item, mediaUrl: "" }))}
+														className="text-xs text-red-600 hover:text-red-700"
+													>
+														Hapus gambar
+													</button>
+												</div>
+											) : (
+												<p className="text-xs text-neutral-500">Belum ada gambar materi.</p>
+											)}
+										</div>
 									</div>
 
 									<div>

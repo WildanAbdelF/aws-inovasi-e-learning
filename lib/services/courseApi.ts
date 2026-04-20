@@ -1,6 +1,17 @@
 import type { Course } from "@/types/course";
 
 const baseUrl = "/api/courses";
+const imageUploadUrl = "/api/uploads/image";
+
+export type CourseImageUploadTarget = "course-thumbnail" | "course-material";
+
+export interface UploadCourseImageParams {
+  file: File;
+  target: CourseImageUploadTarget;
+  courseId?: string;
+  moduleId?: string;
+  itemId?: string;
+}
 
 export async function listCourses(): Promise<Course[]> {
   const response = await fetch(baseUrl, { method: "GET" });
@@ -84,4 +95,49 @@ export async function deleteCourse(courseId: string): Promise<void> {
         : "Failed to delete course.";
     throw new Error(message);
   }
+}
+
+export async function uploadCourseImage(
+  params: UploadCourseImageParams
+): Promise<string> {
+  const formData = new FormData();
+  formData.set("file", params.file);
+  formData.set("target", params.target);
+
+  if (params.courseId) {
+    formData.set("courseId", params.courseId);
+  }
+  if (params.moduleId) {
+    formData.set("moduleId", params.moduleId);
+  }
+  if (params.itemId) {
+    formData.set("itemId", params.itemId);
+  }
+
+  const response = await fetch(imageUploadUrl, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    const message =
+      typeof errorBody.error === "string"
+        ? errorBody.error
+        : "Failed to upload image.";
+    throw new Error(message);
+  }
+
+  const body = (await response.json()) as {
+    data?: {
+      url?: string;
+    };
+  };
+
+  const url = body.data?.url;
+  if (typeof url !== "string" || !url.trim()) {
+    throw new Error("Upload succeeded but image URL is missing.");
+  }
+
+  return url;
 }

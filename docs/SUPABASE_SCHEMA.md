@@ -96,3 +96,10 @@ Use SQL script in [supabase/schema.sql](supabase/schema.sql) from Supabase SQL E
 - Session token is stored in HttpOnly cookies and can be read through `/api/auth/me`.
 - Forgot password uses Supabase official reset email flow via `/api/auth/forgot-password` with redirect to `/forgot-password/reset`.
 - Ensure `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `SUPABASE_PUBLISHABLE_KEY`) and `NEXT_PUBLIC_APP_URL` are configured.
+
+## Storage Notes (Course Images)
+
+- Admin upload gambar thumbnail kursus dan gambar materi menggunakan endpoint `/api/uploads/image`.
+- Buat bucket Supabase Storage bernama `course-media` dan set sebagai **public** supaya URL gambar bisa langsung dipakai di frontend.
+- Jika ingin nama bucket berbeda, set env `SUPABASE_COURSE_MEDIA_BUCKET` (server) atau `NEXT_PUBLIC_SUPABASE_COURSE_MEDIA_BUCKET`.
+- File yang didukung: JPG, PNG, WEBP, GIF. Ukuran maksimum: 5MB.

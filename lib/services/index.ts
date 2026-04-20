@@ -24,6 +24,7 @@ export {
   createCourse,
   updateCourse,
   deleteCourse,
+  uploadCourseImage,
 } from "./courseApi";
 
 export {
