@@ -81,6 +81,45 @@ export default function AdminDashboardPage() {
     (acc, point) => acc + point.totalRevenue,
     0
   );
+  const firstRevenue = chartPoints[0]?.totalRevenue ?? 0;
+  const lastRevenue = chartPoints[chartPoints.length - 1]?.totalRevenue ?? 0;
+  const revenueChange = lastRevenue - firstRevenue;
+
+  const chartWidth = 640;
+  const chartHeight = 220;
+  const chartPaddingX = 24;
+  const chartPaddingY = 20;
+
+  const linePoints = chartPoints.map((point, index) => {
+    const x =
+      chartPoints.length > 1
+        ? chartPaddingX +
+          (index * (chartWidth - chartPaddingX * 2)) / (chartPoints.length - 1)
+        : chartWidth / 2;
+    const y =
+      maxRevenue > 0
+        ? chartHeight -
+          chartPaddingY -
+          (point.totalRevenue / maxRevenue) * (chartHeight - chartPaddingY * 2)
+        : chartHeight - chartPaddingY;
+
+    return { x, y, point };
+  });
+
+  const linePath = linePoints
+    .map((coord, index) => `${index === 0 ? "M" : "L"} ${coord.x} ${coord.y}`)
+    .join(" ");
+
+  const areaPath =
+    linePoints.length > 0
+      ? `${linePath} L ${linePoints[linePoints.length - 1].x} ${chartHeight - chartPaddingY} L ${linePoints[0].x} ${chartHeight - chartPaddingY} Z`
+      : "";
+
+  const formatJuta = (amount: number) =>
+    (amount / 1_000_000).toLocaleString("id-ID", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -205,9 +244,8 @@ export default function AdminDashboardPage() {
           >
             <p className="text-xs sm:text-sm text-neutral-500 mb-1">Total Revenue</p>
             <p className="text-xl sm:text-2xl font-bold text-neutral-900">
-              Rp {(stats.totalRevenue / 1000000).toFixed(1)}M
+              Rp {formatJuta(stats.totalRevenue)} juta
             </p>
-            <p className="text-xs text-green-600 mt-1">+12.5%</p>
           </div>
           <div
             className="bg-white rounded-xl border p-4 sm:p-5"
@@ -219,7 +257,6 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-bold text-neutral-900">
               {stats.activeUsers.toLocaleString()}
             </p>
-            <p className="text-xs text-green-600 mt-1">+5.2%</p>
           </div>
           <div
             className="bg-white rounded-xl border p-4 sm:p-5"
@@ -231,7 +268,6 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-bold text-neutral-900">
               {stats.activeSubscriptions.toLocaleString()}
             </p>
-            <p className="text-xs text-green-600 mt-1">+2.1%</p>
           </div>
           <div
             className="bg-white rounded-xl border p-4 sm:p-5"
@@ -243,7 +279,6 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-bold text-neutral-900">
               {stats.totalEnrollments.toLocaleString()}
             </p>
-            <p className="text-xs text-green-600 mt-1">+8.0%</p>
           </div>
         </div>
 
@@ -258,32 +293,83 @@ export default function AdminDashboardPage() {
             <h3 className="text-base sm:text-lg font-bold text-neutral-900 mb-1">Revenue Analytics</h3>
             <p className="text-xs text-neutral-500 mb-3 sm:mb-4">30 hari terakhir</p>
             <p className="text-sm text-neutral-700 mb-4">
-              Pendapatan 30 hari: <span className="font-semibold">Rp {revenueLast30Days.toLocaleString("id-ID")}</span>
+              Pendapatan 30 hari: <span className="font-semibold">Rp {formatJuta(revenueLast30Days)} juta</span>
             </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+              <div className="rounded-lg border bg-neutral-50 p-3">
+                <p className="text-[11px] text-neutral-500">Awal Periode</p>
+                <p className="text-sm font-semibold text-neutral-900">Rp {formatJuta(firstRevenue)} juta</p>
+              </div>
+              <div className="rounded-lg border bg-neutral-50 p-3">
+                <p className="text-[11px] text-neutral-500">Akhir Periode</p>
+                <p className="text-sm font-semibold text-neutral-900">Rp {formatJuta(lastRevenue)} juta</p>
+              </div>
+              <div className="rounded-lg border bg-neutral-50 p-3">
+                <p className="text-[11px] text-neutral-500">Perubahan Nominal</p>
+                <p className={`text-sm font-semibold ${revenueChange >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  {revenueChange >= 0 ? "+" : "-"}Rp {formatJuta(Math.abs(revenueChange))} juta
+                </p>
+              </div>
+            </div>
 
             {chartPoints.length === 0 ? (
               <p className="text-sm text-neutral-500">Belum ada data pendapatan untuk ditampilkan.</p>
             ) : (
               <div className="space-y-3">
-                <div className="h-40 sm:h-48 flex items-end gap-2">
-                  {chartPoints.map((point) => {
-                    const heightPercent =
-                      maxRevenue > 0
-                        ? Math.max(8, Math.round((point.totalRevenue / maxRevenue) * 100))
-                        : 8;
+                <div className="rounded-lg border bg-neutral-50 p-3">
+                  <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-44 sm:h-52">
+                    <defs>
+                      <linearGradient id="revenue-area-gradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ef4444" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#ef4444" stopOpacity="0.03" />
+                      </linearGradient>
+                    </defs>
 
-                    return (
-                      <div key={point.date} className="flex-1 flex flex-col items-center justify-end">
-                        <div
-                          title={`${point.label}: Rp ${point.totalRevenue.toLocaleString("id-ID")}`}
-                          className="w-full rounded-t-md bg-gradient-to-t from-red-600 to-red-400 transition-all duration-300"
-                          style={{ height: `${heightPercent}%` }}
+                    {[0.25, 0.5, 0.75].map((fraction) => {
+                      const y =
+                        chartHeight -
+                        chartPaddingY -
+                        fraction * (chartHeight - chartPaddingY * 2);
+                      return (
+                        <line
+                          key={`grid-${fraction}`}
+                          x1={chartPaddingX}
+                          x2={chartWidth - chartPaddingX}
+                          y1={y}
+                          y2={y}
+                          stroke="#e5e7eb"
+                          strokeDasharray="4 4"
+                          strokeWidth="1"
                         />
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+
+                    {areaPath ? <path d={areaPath} fill="url(#revenue-area-gradient)" /> : null}
+                    {linePath ? (
+                      <path
+                        d={linePath}
+                        fill="none"
+                        stroke="#dc2626"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    ) : null}
+
+                    {linePoints.map(({ x, y, point }) => (
+                      <g key={point.date}>
+                        <circle cx={x} cy={y} r="4" fill="#dc2626" />
+                        <title>{`${point.label}: Rp ${formatJuta(point.totalRevenue)} juta`}</title>
+                      </g>
+                    ))}
+                  </svg>
                 </div>
-                <div className="grid grid-cols-10 gap-2 text-[10px] text-neutral-500">
+
+                <div
+                  className="grid gap-2 text-[10px] text-neutral-500"
+                  style={{ gridTemplateColumns: `repeat(${chartPoints.length}, minmax(0, 1fr))` }}
+                >
                   {chartPoints.map((point) => (
                     <p key={`${point.date}-label`} className="text-center truncate">
                       {point.label}
