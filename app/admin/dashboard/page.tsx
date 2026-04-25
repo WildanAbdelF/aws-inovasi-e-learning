@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Mobile Header */}
-      <div className="lg:hidden h-16 bg-white border-b flex items-center px-4 sticky top-0 z-30 gap-3">
+      <div className="lg:hidden h-16 bg-white border-b flex items-center px-4 sticky top-0 z-[70] gap-3">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-2 -ml-2 hover:bg-neutral-100 rounded-lg"
@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-x-0 bottom-0 top-16 bg-black/50 z-40"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -112,7 +112,7 @@ export default function AdminDashboardPage() {
       <div className="flex">
         {/* Sidebar */}
         <aside
-          className={`fixed lg:relative lg:translate-x-0 transition-transform duration-300 w-56 bg-white border-r flex flex-col justify-between h-screen top-0 lg:top-auto z-50 ${
+          className={`fixed top-16 h-[calc(100vh-4rem)] lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:self-start lg:translate-x-0 transition-transform duration-300 w-56 bg-white border-r flex flex-col justify-between z-50 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
