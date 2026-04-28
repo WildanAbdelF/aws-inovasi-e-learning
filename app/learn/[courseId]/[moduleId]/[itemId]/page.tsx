@@ -9,6 +9,7 @@ import CertificateModal from "@/components/certificate/CertificateModal";
 import {
 	getMyProgress,
 	issueMyCertificate,
+	listMyCertificates,
 	listMyCourseAccesses,
 	markMyProgress,
 } from "@/lib/services/userApi";
@@ -55,10 +56,12 @@ export default function LearnDetailPage() {
 	// Certificate state
 	const [showCertificate, setShowCertificate] = useState(false);
 	const [currentCertificate, setCurrentCertificate] = useState<Certificate | null>(null);
+	const [certificateLoaded, setCertificateLoaded] = useState(false);
 	const [currentUserName, setCurrentUserName] = useState<string>("");
 
 	const quizQuestions: QuizQuestion[] = currentItem?.quizQuestions || [];
 	const isQuizItem = currentItem?.type === "quiz" && quizQuestions.length > 0;
+	const isQuizAlreadyCompleted = isQuizItem && progress.includes(itemId);
 
 	useEffect(() => {
 		const loadCourse = async () => {
@@ -78,6 +81,19 @@ export default function LearnDetailPage() {
 
 		void loadCourse();
 	}, [courseId]);
+
+	useEffect(() => {
+		setCurrentCertificate(null);
+		setShowCertificate(false);
+		setCertificateLoaded(false);
+	}, [courseId]);
+
+	useEffect(() => {
+		setCurrentQuestionIndex(0);
+		setSelectedAnswers({});
+		setQuizSubmitted(false);
+		setQuizAnimating(false);
+	}, [courseId, moduleId, itemId]);
 
 	useEffect(() => {
 		if (courseLoading || !course) return;
@@ -122,7 +138,7 @@ export default function LearnDetailPage() {
 			try {
 				const result = await getMyProgress(course.id);
 				const serverProgress = result.completedItemIds;
-				if (!serverProgress.includes(itemId)) {
+				if (!serverProgress.includes(itemId) && !isQuizItem) {
 					await markMyProgress({
 						courseId: course.id,
 						moduleId,
@@ -142,7 +158,39 @@ export default function LearnDetailPage() {
 		};
 
 		void syncProgress();
-	}, [isAuthorized, course, itemId, moduleId, currentUserEmail]);
+	}, [isAuthorized, course, itemId, moduleId, currentUserEmail, isQuizItem]);
+
+	useEffect(() => {
+		if (!isAuthorized || !course || !currentUserEmail) return;
+
+		let cancelled = false;
+
+		const loadCertificate = async () => {
+			setCertificateLoaded(false);
+
+			try {
+				const certificates = await listMyCertificates();
+				if (cancelled) return;
+
+				const existingCertificate = certificates.find((cert) => cert.courseId === course.id);
+				if (existingCertificate) {
+					setCurrentCertificate(existingCertificate);
+				}
+			} catch (error) {
+				console.error("Failed to load certificate:", error);
+			} finally {
+				if (!cancelled) {
+					setCertificateLoaded(true);
+				}
+			}
+		};
+
+		void loadCertificate();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [isAuthorized, course, currentUserEmail]);
 
 	const flattenedLessons = useMemo(() => {
 		return modules.flatMap((module) =>
@@ -166,7 +214,7 @@ export default function LearnDetailPage() {
 
 	// Check and award certificate when course is completed
 	useEffect(() => {
-		if (!isCourseCompleted || !currentUserEmail || !course) return;
+		if (!certificateLoaded || !isCourseCompleted || !currentUserEmail || !course) return;
 		if (currentCertificate?.courseId === course.id) return;
 
 		const syncCertificate = async () => {
@@ -190,7 +238,7 @@ export default function LearnDetailPage() {
 		};
 
 		void syncCertificate();
-	}, [isCourseCompleted, currentUserEmail, course, currentCertificate]);
+	}, [certificateLoaded, isCourseCompleted, currentUserEmail, course, currentCertificate]);
 
 	const currentIndex = flattenedLessons.findIndex((entry) => entry.itemId === itemId);
 	const prevLesson = currentIndex > 0 ? flattenedLessons[currentIndex - 1] : null;
@@ -349,8 +397,26 @@ export default function LearnDetailPage() {
 		}
 	};
 
-	const handleSubmitQuiz = () => {
+	const handleSubmitQuiz = async () => {
 		setQuizSubmitted(true);
+
+		const score = calculateScore();
+		const percentage = Math.round((score / totalQuestions) * 100);
+		const passed = percentage >= 70;
+
+		if (passed && !progress.includes(itemId)) {
+			try {
+				await markMyProgress({
+					courseId: course.id,
+					moduleId,
+					itemId,
+					completed: true,
+				});
+				setProgress((prev) => (prev.includes(itemId) ? prev : [...prev, itemId]));
+			} catch (error) {
+				console.error("Failed to save quiz completion:", error);
+			}
+		}
 	};
 
 	const calculateScore = () => {
@@ -366,6 +432,43 @@ export default function LearnDetailPage() {
 	// Render Quiz UI
 	const renderQuiz = () => {
 		if (!currentQuestion) return null;
+
+		if (isQuizAlreadyCompleted && !quizSubmitted) {
+			return (
+				<div className="max-w-2xl mx-auto py-10 text-center animate-fadeIn">
+					<div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center bg-green-100 animate-scaleIn">
+						<svg className="w-12 h-12 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+						</svg>
+					</div>
+					<h2 className="text-2xl font-bold mb-2">Kuis sudah selesai</h2>
+					<p className="text-neutral-600 mb-6">
+						Anda sudah lulus kuis ini. Anda tidak perlu mengulangnya lagi.
+					</p>
+					<div className="flex gap-3 justify-center flex-wrap">
+						{nextLesson && (
+							<button
+								onClick={() => handleNavigate(nextLesson)}
+								className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+							>
+								Lanjut ke Materi Berikutnya
+							</button>
+						)}
+						{isCourseCompleted && currentCertificate && (
+							<button
+								onClick={() => setShowCertificate(true)}
+								className="px-6 py-3 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-2"
+							>
+								<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+								</svg>
+								Lihat Sertifikat
+							</button>
+						)}
+					</div>
+				</div>
+			);
+		}
 
 		const selectedOptionId = selectedAnswers[currentQuestion.id] || "";
 
@@ -522,7 +625,9 @@ export default function LearnDetailPage() {
 
 					{currentQuestionIndex === totalQuestions - 1 ? (
 						<button
-							onClick={handleSubmitQuiz}
+							onClick={() => {
+								void handleSubmitQuiz();
+							}}
 							disabled={Object.keys(selectedAnswers).length < totalQuestions}
 							className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed"
 						>
