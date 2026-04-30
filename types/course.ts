@@ -35,4 +35,5 @@ export interface Course {
   description?: string;
   curriculum?: string[];
   modules?: CourseModule[];
+  enrollmentCount?: number;
 }

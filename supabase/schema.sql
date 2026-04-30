@@ -35,6 +35,7 @@ create table if not exists public.courses (
   description text,
   curriculum jsonb not null default '[]'::jsonb,
   modules jsonb not null default '[]'::jsonb,
+  enrollment_count integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

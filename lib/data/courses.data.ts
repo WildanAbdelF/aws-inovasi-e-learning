@@ -227,6 +227,7 @@ export const dummyCourses: Course[] = [
         ],
       },
     ],
+    enrollmentCount: 1250,
   },
   {
     id: "2",
@@ -324,6 +325,7 @@ export const dummyCourses: Course[] = [
         ],
       },
     ],
+    enrollmentCount: 2100,
   },
   {
     id: "3",
@@ -416,6 +418,7 @@ export const dummyCourses: Course[] = [
         ],
       },
     ],
+    enrollmentCount: 1680,
   },
   {
     id: "4",
@@ -513,6 +516,7 @@ export const dummyCourses: Course[] = [
         ],
       },
     ],
+    enrollmentCount: 950,
   },
   {
     id: "5",
@@ -610,6 +614,7 @@ export const dummyCourses: Course[] = [
         ],
       },
     ],
+    enrollmentCount: 1420,
   },
   {
     id: "6",
@@ -707,5 +712,6 @@ export const dummyCourses: Course[] = [
         ],
       },
     ],
+    enrollmentCount: 580,
   },
 ];

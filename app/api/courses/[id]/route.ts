@@ -17,6 +17,7 @@ function normalizeCourse(input: any, id: string): Course {
       ? input.curriculum.filter((c: unknown) => typeof c === "string")
       : undefined,
     modules: Array.isArray(input.modules) ? input.modules : undefined,
+    enrollmentCount: Number.isFinite(input.enrollmentCount) ? Number(input.enrollmentCount) : 0,
   };
 }
 
@@ -30,6 +31,7 @@ function toDbCourse(course: Course) {
     description: course.description ?? null,
     curriculum: Array.isArray(course.curriculum) ? course.curriculum : [],
     modules: Array.isArray(course.modules) ? course.modules : [],
+    enrollment_count: course.enrollmentCount ?? 0,
     updated_at: new Date().toISOString(),
   };
 }
@@ -49,6 +51,7 @@ function mapDbCourse(row: any): Course {
       ? row.curriculum.filter((c: unknown) => typeof c === "string")
       : [],
     modules: Array.isArray(row?.modules) ? row.modules : [],
+    enrollmentCount: Number.isFinite(row?.enrollment_count) ? Number(row.enrollment_count) : 0,
   };
 }
 

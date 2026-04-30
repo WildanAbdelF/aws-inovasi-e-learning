@@ -7,6 +7,7 @@ import { listCourses } from "@/lib/services/courseApi";
 
 export default function CourseCatalog() {
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,9 +27,17 @@ export default function CourseCatalog() {
     void loadCourses();
   }, []);
 
-  const filtered = useMemo(() => courses.filter((c) =>
-    c.title.toLowerCase().includes(query.toLowerCase())
-  ), [courses, query]);
+  const filtered = useMemo(() => {
+    let result = courses.filter((c) =>
+      c.title.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (sortBy === "popular") {
+      result = result.sort((a, b) => (b.enrollmentCount || 0) - (a.enrollmentCount || 0));
+    }
+
+    return result;
+  }, [courses, query, sortBy]);
 
   if (loading) {
     return (
@@ -51,10 +60,16 @@ export default function CourseCatalog() {
           className="w-full sm:flex-1 border rounded px-4 py-2"
         />
 
-        <div className="flex gap-2">
-          <button className="px-4 py-2 border rounded bg-red-600 text-white hover:bg-red-700 hover:scale-105 transition-transform">Kategori</button>
-          <button className="px-4 py-2 border rounded border-red-600 text-red-600 hover:bg-red-600 hover:text-white hover:scale-105 transition-transform">Paling Populer</button>
-        </div>
+        <button 
+          onClick={() => setSortBy(sortBy === "newest" ? "popular" : "newest")}
+          className={`px-4 py-2 border rounded hover:scale-105 transition-transform ${
+            sortBy === "popular"
+              ? "bg-red-600 text-white border-red-600 hover:bg-red-700"
+              : "border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+          }`}
+        >
+          {sortBy === "popular" ? "✓ Paling Populer" : "Paling Populer"}
+        </button>
       </div>
 
       <CourseList courses={filtered} />
