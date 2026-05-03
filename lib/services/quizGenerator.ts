@@ -90,20 +90,49 @@ Pastikan output HANYA berupa JSON yang valid tanpa teks tambahan.
 }
 
 /**
- * Call LLM Provider - Choose one based on your preference
+ * Call LLM Provider - Choose one based on relative API Key availability
  */
 async function callLLMProvider(prompt: string): Promise<string> {
-  // Option 1: OpenAI
-  // return await callOpenAI(prompt);
+  // Option 1: Google Gemini (Preferred jika API key tersedia)
+  if (process.env.GOOGLE_API_KEY) {
+    console.log("Menggunakan Google Gemini API...");
+    try {
+      return await callGemini(prompt);
+    } catch (error) {
+      console.error("Error pada Google Gemini API:", error);
+      throw new Error(error instanceof Error ? error.message : "Gagal memanggil Google Gemini API");
+    }
+  }
   
-  // Option 2: Google Gemini
-  // return await callGemini(prompt);
+  // Option 2: OpenAI
+  if (process.env.OPENAI_API_KEY) {
+    console.log("Menggunakan OpenAI API...");
+    try {
+      return await callOpenAI(prompt);
+    } catch (error) {
+      console.error("Error pada OpenAI API:", error);
+      throw new Error(error instanceof Error ? error.message : "Gagal memanggil OpenAI API");
+    }
+  }
   
-  // Option 3: AWS Bedrock (Claude)
-  // return await callAWSBedrock(prompt);
-  
-  // For demo purposes, throw error to remind user to configure
-  throw new Error("Please configure an LLM provider in quizGenerator.ts");
+  console.warn("Tidak ada API Key yang dikonfigurasi (GOOGLE_API_KEY atau OPENAI_API_KEY). Menggunakan data dummy sebagai fallback.");
+  // Fallback ke data dummy agar aplikasi tidak crash jika belum ada API key
+  return JSON.stringify({
+    questions: [
+      {
+        id: "mock1",
+        questionText: "Ini adalah pertanyaan contoh karena API Key (Gemini/OpenAI) belum diatur di .env. Manakah jawaban yang benar?",
+        options: [
+          { id: "mock1-a", text: "Jawaban Benar" },
+          { id: "mock1-b", text: "Jawaban Salah 1" },
+          { id: "mock1-c", text: "Jawaban Salah 2" },
+          { id: "mock1-d", text: "Jawaban Salah 3" }
+        ],
+        correctOptionId: "mock1-a",
+        explanation: "Karena API key belum diset, kami menampilkan pertanyaan dummy ini."
+      }
+    ]
+  });
 }
 
 /**
@@ -131,15 +160,26 @@ async function callOpenAI(prompt: string): Promise<string> {
   });
 
   const data = await response.json();
+  
+  if (!response.ok) {
+    console.error("OpenAI API Error details:", data);
+    throw new Error(data.error?.message || "Terjadi kesalahan saat memanggil API OpenAI");
+  }
+
+  if (!data.choices || data.choices.length === 0) {
+    throw new Error("API OpenAI tidak mengembalikan hasil (choices kosong)");
+  }
+
   return data.choices[0].message.content;
 }
 
 /**
- * Google Gemini Implementation
+ * Google Gemini Implementation (Google AI Studio)
  */
 async function callGemini(prompt: string): Promise<string> {
+  // Menggunakan model gemini-flash-latest yang tersedia di tahun 2026 untuk API Key Anda
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${process.env.GOOGLE_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -154,6 +194,16 @@ async function callGemini(prompt: string): Promise<string> {
   );
 
   const data = await response.json();
+  
+  if (!response.ok) {
+    console.error("Gemini API Error details:", data);
+    throw new Error(data.error?.message || "Terjadi kesalahan saat memanggil API Gemini");
+  }
+  
+  if (!data.candidates || data.candidates.length === 0) {
+    throw new Error("API Gemini tidak mengembalikan hasil (candidates kosong)");
+  }
+
   return data.candidates[0].content.parts[0].text;
 }
 
@@ -173,33 +223,53 @@ async function callAWSBedrock(prompt: string): Promise<string> {
  */
 function parseQuizResponse(response: string): QuizQuestion[] {
   try {
-    // Clean response - remove markdown code blocks if present
-    let cleanedResponse = response.trim();
-    if (cleanedResponse.startsWith("```json")) {
-      cleanedResponse = cleanedResponse.slice(7);
-    }
-    if (cleanedResponse.startsWith("```")) {
-      cleanedResponse = cleanedResponse.slice(3);
-    }
-    if (cleanedResponse.endsWith("```")) {
-      cleanedResponse = cleanedResponse.slice(0, -3);
+    let jsonStr = response;
+    
+    // Gunakan regex untuk mengekstrak bagian JSON (berjaga-jaga jika ada teks sebelum atau sesudah JSON)
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    } else {
+      // Fallback fallback: clean markdown blocks manually
+      let cleanedResponse = response.trim();
+      if (cleanedResponse.startsWith("```json")) {
+        cleanedResponse = cleanedResponse.slice(7);
+      }
+      if (cleanedResponse.startsWith("```")) {
+        cleanedResponse = cleanedResponse.slice(3);
+      }
+      if (cleanedResponse.endsWith("```")) {
+        cleanedResponse = cleanedResponse.slice(0, -3);
+      }
+      jsonStr = cleanedResponse;
     }
 
-    const parsed: GeneratedQuiz = JSON.parse(cleanedResponse);
+    const parsed: GeneratedQuiz = JSON.parse(jsonStr);
+    
+    if (!parsed.questions || !Array.isArray(parsed.questions)) {
+      throw new Error("Format JSON tidak valid: Properti 'questions' tidak ditemukan atau bukan array");
+    }
     
     // Validate and transform to QuizQuestion format
-    return parsed.questions.map((q, index) => ({
-      id: q.id || `q${index + 1}`,
-      questionText: q.questionText,
-      options: q.options.map((opt, optIndex) => ({
-        id: opt.id || `q${index + 1}-${String.fromCharCode(97 + optIndex)}`,
-        text: opt.text,
-      })),
-      correctOptionId: q.correctOptionId,
-    }));
+    return parsed.questions.map((q, index) => {
+      // Pastikan data memiliki properti minimal
+      if (!q.questionText || !q.options || !q.correctOptionId) {
+         throw new Error(`Data pertanyaan pada indeks ${index} tidak lengkap.`);
+      }
+
+      return {
+        id: q.id || `q${index + 1}`,
+        questionText: q.questionText,
+        options: q.options.map((opt, optIndex) => ({
+          id: opt.id || `q${index + 1}-${String.fromCharCode(97 + optIndex)}`,
+          text: opt.text || String(opt),
+        })),
+        correctOptionId: q.correctOptionId,
+      };
+    });
   } catch (error) {
-    console.error("Failed to parse quiz response:", error);
-    throw new Error("Failed to parse generated quiz from LLM response");
+    console.error("Failed to parse quiz response:", error, "\nRaw Response:\n", response);
+    throw new Error(error instanceof Error ? error.message : "Gagal memproses response dari AI");
   }
 }
 

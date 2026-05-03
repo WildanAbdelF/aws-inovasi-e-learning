@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { createCourse, uploadCourseImage } from "@/lib/services/courseApi";
+import { AutoQuizGenerator } from "@/components/quiz/AutoQuizGenerator";
 import {
 	Dialog,
 	DialogContent,
@@ -234,15 +235,24 @@ function QuizEditor({
 
 			{/* Add Question + Save */}
 			<div className="flex items-center justify-between pt-2 border-t">
-				<button
-					onClick={addQuestion}
-					className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 border rounded-lg hover:bg-neutral-50 transition-colors"
-				>
-					<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-					</svg>
-					Tambah Pertanyaan
-				</button>
+				<div className="flex items-center gap-2">
+					<button
+						onClick={addQuestion}
+						className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 border rounded-lg hover:bg-neutral-50 transition-colors"
+					>
+						<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+						</svg>
+						Tambah Pertanyaan
+					</button>
+					<AutoQuizGenerator 
+						moduleItems={selectedModule.items || []} 
+						onQuizGenerated={(newQuestions) => {
+							updateQuizQuestions(newQuestions);
+							window.alert(`Behasil! ${newQuestions.length} pertanyaan telah di-generate oleh AI.`);
+						}} 
+					/>
+				</div>
 				<button
 					onClick={() => {
 						// Validasi
@@ -421,7 +431,8 @@ export default function NewCoursePage() {
 				setSuccessDialogOpen(true);
 			} catch (error) {
 				console.error("Failed to create course:", error);
-				window.alert("Gagal menyimpan kursus ke API. Silakan coba lagi.");
+				// Tampilkan pesan error yang lebih spesifik ke spesifik dari API
+				window.alert(`Gagal menyimpan kursus ke API. ${error instanceof Error ? error.message : "Silakan coba lagi."}`);
 			} finally {
 				setIsSaving(false);
 			}

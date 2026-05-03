@@ -31,7 +31,7 @@ function toDbCourse(course: Course) {
     description: course.description ?? null,
     curriculum: Array.isArray(course.curriculum) ? course.curriculum : [],
     modules: Array.isArray(course.modules) ? course.modules : [],
-    enrollment_count: course.enrollmentCount ?? 0,
+    // enrollment_count tidak disupport schema saat ini
     updated_at: new Date().toISOString(),
   };
 }

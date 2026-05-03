@@ -21,6 +21,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { AutoQuizGenerator } from "@/components/quiz/AutoQuizGenerator";
 
 type EditableCourse = Course & { modules: CourseModule[] };
 
@@ -207,15 +208,24 @@ function QuizEditor({
 			</div>
 
 			<div className="pt-2 border-t">
-				<button
-					onClick={addQuestion}
-					className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 border rounded-lg hover:bg-neutral-50 transition-colors"
-				>
-					<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-					</svg>
-					Tambah Pertanyaan
-				</button>
+				<div className="flex items-center gap-2">
+					<button
+						onClick={addQuestion}
+						className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 border rounded-lg hover:bg-neutral-50 transition-colors"
+					>
+						<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+						</svg>
+						Tambah Pertanyaan
+					</button>
+					<AutoQuizGenerator 
+						moduleItems={selectedModule.items || []} 
+						onQuizGenerated={(newQuestions) => {
+							updateQuizQuestions(newQuestions);
+							window.alert(`Behasil! ${newQuestions.length} pertanyaan telah di-generate oleh AI.`);
+						}} 
+					/>
+				</div>
 			</div>
 		</div>
 	);
@@ -384,7 +394,8 @@ export default function EditCoursePage() {
 				setSuccessDialogOpen(true);
 			} catch (error) {
 				console.error("Failed to update course:", error);
-				window.alert("Gagal menyimpan perubahan ke API. Silakan coba lagi.");
+				// Tampilkan pesan error yang konkrit (misalnya validasi JSON atau Supabase)
+				window.alert(`Gagal menyimpan perubahan ke API. ${error instanceof Error ? error.message : "Silakan coba lagi."}`);
 			} finally {
 				setIsSaving(false);
 			}
