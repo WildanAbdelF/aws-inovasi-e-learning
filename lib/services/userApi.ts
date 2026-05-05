@@ -219,6 +219,18 @@ export async function getMyProgress(courseId: string): Promise<UserProgressRespo
   return payload.data;
 }
 
+export async function deleteMyAccount(): Promise<void> {
+  const response = await fetch("/api/users/me/delete", {
+    method: "DELETE",
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, "Failed to delete account."));
+  }
+}
+
 export async function markMyProgress(payload: UserProgressPayload): Promise<void> {
   const response = await fetch("/api/users/me/progress", {
     method: "PUT",

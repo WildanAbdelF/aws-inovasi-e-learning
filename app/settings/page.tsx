@@ -13,10 +13,11 @@ import {
   updateMyProfile,
   listMyCourseAccesses,
   listMyCertificates,
+  deleteMyAccount,
 } from "@/lib/services/userApi";
 import type { ApiUserProfile, UserCourseAccess, UserCertificate } from "@/types/user";
 
-type TabType = "profil" | "langganan" | "lifetime" | "riwayat" | "sertifikat";
+type TabType = "profil" | "langganan" | "lifetime" | "riwayat" | "sertifikat" | "hapus";
 
 type PurchaseEntry = {
   id: string;
@@ -78,6 +79,7 @@ export default function SettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -181,12 +183,35 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (isDeleting) return;
+    const confirmed = window.confirm(
+      "Akun Anda akan dihapus permanen beserta semua akses kursus. Lanjutkan?"
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteMyAccount();
+      logout();
+      window.alert("Akun berhasil dihapus.");
+      router.replace("/");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Gagal menghapus akun.";
+      window.alert(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const tabs: { key: TabType; label: string }[] = [
     { key: "profil", label: "Profil" },
     { key: "langganan", label: "Status Langganan" },
     { key: "lifetime", label: "Kursus Lifetime" },
     { key: "riwayat", label: "Riwayat Pembayaran" },
     { key: "sertifikat", label: "Sertifikat" },
+    { key: "hapus", label: "Hapus Akun" },
   ];
 
   const lifetimePurchases = purchases.filter((item) => item.accessType === "lifetime");
@@ -637,6 +662,30 @@ export default function SettingsPage() {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === "hapus" && (
+            <div>
+              <h2 className="text-lg font-semibold text-neutral-900 mb-2">Hapus Akun</h2>
+              <p className="text-sm text-neutral-600 mb-6">
+                Menghapus akun akan menghapus semua akses kursus, progres belajar, dan sertifikat Anda.
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <h3 className="text-sm font-semibold text-red-700 mb-2">Zona Berbahaya</h3>
+                <p className="text-xs text-red-600 mb-4">
+                  Pastikan Anda sudah mengunduh sertifikat yang diperlukan sebelum melanjutkan.
+                </p>
+                <Button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {isDeleting ? "Menghapus..." : "Hapus Akun Saya"}
+                </Button>
+              </div>
             </div>
           )}
         </div>
