@@ -193,14 +193,21 @@ export default function DashboardPage() {
 							Belum ada kursus atau langganan aktif. Mulai dari katalog untuk menambah akses belajar.
 						</div>
 					)}
-					{myCourses.map((course) => (
+					{myCourses.map((course) => {
+						const courseData = Object.values(coursesById).find(c => c.id === course.id);
+						const thumbnail = courseData?.image || "/images/placeholder.jpg";
+						return (
 					<div
 						key={course.id}
 						className="bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col transition-transform duration-200 hover:scale-[1.02]"
 					>
-						<div className="relative h-32 bg-gradient-to-r from-orange-400 to-lime-400">
+						<div
+							className="relative h-32 bg-neutral-200 bg-cover bg-center"
+							style={{ backgroundImage: `url(${thumbnail})` }}
+							aria-label="Course Thumbnail"
+						>
 							<span
-								className={`absolute top-3 left-3 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold text-white ${
+								className={`absolute top-3 left-3 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold text-white shadow-sm ${
 									course.accessType === "lifetime" ? "bg-emerald-600" : "bg-blue-600"
 								}`}
 							>
@@ -223,7 +230,8 @@ export default function DashboardPage() {
 							</button>
 						</div>
 					</div>
-				))}
+						);
+					})}
 				</div>
 				</div>
 			)}
