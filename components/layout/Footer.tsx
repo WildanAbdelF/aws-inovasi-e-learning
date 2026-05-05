@@ -24,6 +24,19 @@ export default function Footer() {
         </div>
 
         <div>
+          <h4 className="font-semibold mb-2">Legal</h4>
+          <p className="text-sm">
+            <a href="/terms-and-conditions" className="hover:text-red-600">Syarat & Ketentuan</a>
+          </p>
+          <p className="text-sm">
+            <a href="/privacy-policy" className="hover:text-red-600">Kebijakan Privasi</a>
+          </p>
+          <p className="text-sm">
+            <a href="/refund-policy" className="hover:text-red-600">Kebijakan Refund</a>
+          </p>
+        </div>
+
+        <div>
           <h4 className="font-semibold mb-2">Ikuti Kami</h4>
           <p>Twitter</p>
           <p>Instagram</p>
