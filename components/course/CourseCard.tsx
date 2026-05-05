@@ -63,9 +63,15 @@ export default function CourseCard({ course }: { course: Course }) {
             <p className="text-sm text-neutral-500">Oleh {course.author}</p>
           </div>
 
-          <p className="text-red-600 font-bold mt-2">
-            Rp {course.price.toLocaleString("id-ID")}
-          </p>
+          <div className="flex justify-between items-center mt-2">
+            <p className="text-red-600 font-bold">
+              Rp {course.price.toLocaleString("id-ID")}
+            </p>
+            <p className="text-xs text-neutral-500 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+              {course.enrollmentCount?.toLocaleString("id-ID")} siswa
+            </p>
+          </div>
           {subscription && (
             <p className="text-[11px] text-emerald-600 font-semibold mt-1">
               Kursus tersedia selama 1 bulan

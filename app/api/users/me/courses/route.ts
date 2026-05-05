@@ -142,6 +142,9 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!primaryUpsert.error) {
+    // Increment enrollment count in courses table
+    await supabaseAdmin.rpc('increment_enrollment_count', { course_id_param: courseId });
+
     const response = NextResponse.json(
       { data: mapCourseAccess(primaryUpsert.data) },
       { status: 201 }
@@ -167,6 +170,9 @@ export async function POST(request: NextRequest) {
   if (fallbackUpsert.error) {
     return NextResponse.json({ error: fallbackUpsert.error.message }, { status: 500 });
   }
+
+  // Increment enrollment count in courses table
+  await supabaseAdmin.rpc('increment_enrollment_count', { course_id_param: courseId });
 
   const response = NextResponse.json(
     { data: mapCourseAccess(fallbackUpsert.data) },

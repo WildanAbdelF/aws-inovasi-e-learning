@@ -124,6 +124,18 @@ create table if not exists public.certificates (
   unique (user_id, course_id)
 );
 
+-- Increment Enrollment Count RPC Helper
+CREATE OR REPLACE FUNCTION increment_enrollment_count(course_id_param text)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE public.courses
+  SET enrollment_count = enrollment_count + 1
+  WHERE id = course_id_param;
+END;
+$$;
+
 -- Compatibility migration for existing databases
 alter table public.user_courses
   add column if not exists access_type text;
