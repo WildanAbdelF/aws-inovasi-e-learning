@@ -19,8 +19,14 @@ import { loginWithApi } from "@/lib/services/authApi";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      router.push("/");
+    }
+  }, [user, router]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
