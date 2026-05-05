@@ -47,6 +47,14 @@ set
   modules = coalesce(modules, '[]'::jsonb)
 where curriculum is null or modules is null;
 
+-- Ensure enrollment_count exists for older databases.
+alter table public.courses
+  add column if not exists enrollment_count integer not null default 0;
+
+update public.courses
+set enrollment_count = coalesce(enrollment_count, 0)
+where enrollment_count is null;
+
 -- Modules (normalized table, optional for later migration from jsonb)
 create table if not exists public.modules (
   id text primary key,

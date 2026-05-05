@@ -15,7 +15,7 @@ export interface UploadCourseImageParams {
 }
 
 export async function listCourses(): Promise<Course[]> {
-  const response = await fetch(baseUrl, { method: "GET" });
+  const response = await fetch(baseUrl, { method: "GET", cache: "no-store" });
   if (!response.ok) {
     throw new Error("Failed to load courses.");
   }

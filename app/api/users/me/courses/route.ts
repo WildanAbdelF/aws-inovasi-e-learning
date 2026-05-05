@@ -108,13 +108,21 @@ export async function POST(request: NextRequest) {
 
   const { data: course, error: courseError } = await supabaseAdmin
     .from("courses")
-    .select("id, title, price")
+    .select("id, title, price, enrollment_count")
     .eq("id", courseId)
     .maybeSingle();
 
   if (courseError || !course?.id) {
     return NextResponse.json({ error: "Course not found." }, { status: 404 });
   }
+
+  const existingAccess = await supabaseAdmin
+    .from("user_courses")
+    .select("id")
+    .eq("user_id", session.profile.id)
+    .eq("course_id", courseId)
+    .maybeSingle();
+  const shouldIncrementEnrollment = !existingAccess.data?.id;
 
   const now = new Date();
   const expiresAt =
@@ -142,8 +150,15 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!primaryUpsert.error) {
-    // Increment enrollment count in courses table
-    await supabaseAdmin.rpc('increment_enrollment_count', { course_id_param: courseId });
+    if (shouldIncrementEnrollment) {
+      const currentEnrollment = Number.isFinite(course.enrollment_count)
+        ? Number(course.enrollment_count)
+        : 0;
+      await supabaseAdmin
+        .from("courses")
+        .update({ enrollment_count: currentEnrollment + 1 })
+        .eq("id", courseId);
+    }
 
     const response = NextResponse.json(
       { data: mapCourseAccess(primaryUpsert.data) },
@@ -171,8 +186,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: fallbackUpsert.error.message }, { status: 500 });
   }
 
-  // Increment enrollment count in courses table
-  await supabaseAdmin.rpc('increment_enrollment_count', { course_id_param: courseId });
+  if (shouldIncrementEnrollment) {
+    const currentEnrollment = Number.isFinite(course.enrollment_count)
+      ? Number(course.enrollment_count)
+      : 0;
+    await supabaseAdmin
+      .from("courses")
+      .update({ enrollment_count: currentEnrollment + 1 })
+      .eq("id", courseId);
+  }
 
   const response = NextResponse.json(
     { data: mapCourseAccess(fallbackUpsert.data) },
