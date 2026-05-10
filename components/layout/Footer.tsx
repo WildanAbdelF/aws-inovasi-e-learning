@@ -12,8 +12,8 @@ export default function Footer() {
 
         <div>
           <h4 className="font-semibold mb-2">Kontak</h4>
-          <p className="text-rose-100">support@lms.com</p>
-          <p className="text-rose-100">(021) 123-4567</p>
+          <p className="text-rose-100">awsinovasiglobal@gmail.com</p>
+          <p className="text-rose-100">(+62) 888 8888 8888</p>
         </div>
 
         <div>
@@ -37,8 +37,8 @@ export default function Footer() {
 
       </div>
 
-      <p className="text-center text-sm text-rose-100 mt-6">
-        © 2024 AWS E-Learning. All rights reserved.
+      <p className="text-center text-sm text-rose-100 mt-6 pt-12">
+        © 2025 AWS E-Learning. All rights reserved.
       </p>
     </footer>
   );
