@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 
 export default function CTASection() {
   return (
-    <section className="py-12 md:py-20">
+    <section className="pt-16 pb-12 md:pb-20">
       <div className="max-w-4xl mx-auto text-center px-4 md:px-6">
         <h2 className="text-2xl md:text-3xl font-bold">
           Siap Tingkatkan Keahlian Anda?
