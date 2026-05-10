@@ -339,13 +339,55 @@ export default function LearnDetailPage() {
 		}
 	};
 
+	const normalizeYoutubeEmbedUrl = (url: string): string => {
+		if (!url) return url;
+		if (url.includes("youtube.com/embed/")) return url;
+		try {
+			if (url.includes("youtube.com/watch")) {
+				const parsed = new URL(url);
+				const id = parsed.searchParams.get("v");
+				return id ? `https://www.youtube.com/embed/${id}` : url;
+			}
+			if (url.includes("youtu.be/")) {
+				const id = url.split("youtu.be/")[1]?.split(/[?&]/)[0];
+				return id ? `https://www.youtube.com/embed/${id}` : url;
+			}
+		} catch {
+			return url;
+		}
+		return url;
+	};
+
 	const renderMedia = () => {
-		if (!currentItem.mediaUrl) return null;
-		if (currentItem.mediaUrl.includes("youtube")) {
+		const videoUrl = currentItem.videoUrl?.trim();
+		const mediaUrl = currentItem.mediaUrl?.trim();
+		const videoContainerClass =
+			"w-full max-w-4xl mx-auto aspect-video rounded-2xl overflow-hidden border border-neutral-200 bg-black";
+		const imageContainerClass =
+			"w-full max-w-4xl mx-auto aspect-video rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100";
+
+		if (videoUrl) {
+			const embedUrl = normalizeYoutubeEmbedUrl(videoUrl);
 			return (
-				<div className="aspect-video rounded-2xl overflow-hidden bg-black">
+				<div className={videoContainerClass}>
 					<iframe
-						src={currentItem.mediaUrl}
+						src={embedUrl}
+						title={currentItem.title}
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+						allowFullScreen
+						className="w-full h-full"
+					/>
+				</div>
+			);
+		}
+
+		if (!mediaUrl) return null;
+		if (mediaUrl.includes("youtube") || mediaUrl.includes("youtu.be")) {
+			const embedUrl = normalizeYoutubeEmbedUrl(mediaUrl);
+			return (
+				<div className={videoContainerClass}>
+					<iframe
+						src={embedUrl}
 						title={currentItem.title}
 						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 						allowFullScreen
@@ -355,8 +397,8 @@ export default function LearnDetailPage() {
 			);
 		}
 		return (
-			<div className="rounded-2xl overflow-hidden border">
-				<img src={currentItem.mediaUrl} alt={currentItem.title} className="w-full h-auto" />
+			<div className={imageContainerClass}>
+				<img src={mediaUrl} alt={currentItem.title} className="w-full h-full object-contain" />
 			</div>
 		);
 	};
