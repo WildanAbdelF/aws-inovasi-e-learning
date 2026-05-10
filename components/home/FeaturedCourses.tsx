@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 function normalizeCourse(row: any): Course {
+  const enrollmentCountRaw = row.enrollment_count ?? row.enrollmentCount;
+
   return {
     id: String(row.id),
     title: typeof row.title === "string" ? row.title : "",
@@ -16,6 +18,7 @@ function normalizeCourse(row: any): Course {
       ? row.curriculum.filter((item: unknown) => typeof item === "string")
       : undefined,
     modules: Array.isArray(row.modules) ? row.modules : undefined,
+    enrollmentCount: Number.isFinite(enrollmentCountRaw) ? Number(enrollmentCountRaw) : 0,
   };
 }
 
