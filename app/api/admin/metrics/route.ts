@@ -122,6 +122,8 @@ export async function GET(request: NextRequest) {
   const [
     usersCountResult,
     enrollmentsCountResult,
+    // subscription counts removed since subscriptions are deprecated
+    // keep placeholders for parallel query shape compatibility
     subscriptionWithoutExpiryCountResult,
     subscriptionWithExpiryCountResult,
     revenueRowsResult,
@@ -162,12 +164,9 @@ export async function GET(request: NextRequest) {
   const totalEnrollments = enrollmentsCountResult.error
     ? 0
     : enrollmentsCountResult.count ?? 0;
-  const subscriptionWithoutExpiry = subscriptionWithoutExpiryCountResult.error
-    ? 0
-    : subscriptionWithoutExpiryCountResult.count ?? 0;
-  const subscriptionWithExpiry = subscriptionWithExpiryCountResult.error
-    ? 0
-    : subscriptionWithExpiryCountResult.count ?? 0;
+  // Subscriptions deprecated — report 0
+  const subscriptionWithoutExpiry = 0;
+  const subscriptionWithExpiry = 0;
 
   const recentActivityRows = recentActivityResult.error
     ? []
@@ -182,10 +181,7 @@ export async function GET(request: NextRequest) {
     return {
       id: typeof row?.id === "string" ? row.id : crypto.randomUUID(),
       name,
-      action:
-        row?.access_type === "subscription"
-          ? `berlangganan kursus \"${courseTitle}\"`
-          : `membeli kursus \"${courseTitle}\"`,
+      action: `membeli kursus \"${courseTitle}\"`,
       time: formatRelativeTime(typeof row?.created_at === "string" ? row.created_at : null),
       avatar: name.charAt(0).toUpperCase() || "U",
     };

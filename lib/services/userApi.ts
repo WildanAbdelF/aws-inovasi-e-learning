@@ -25,7 +25,7 @@ export type PasswordResetSession = {
 
 export type CourseAccessPayload = {
   courseId: string;
-  accessType: "lifetime" | "subscription";
+  accessType: "lifetime";
 };
 
 export type UserProgressPayload = {

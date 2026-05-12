@@ -11,7 +11,7 @@ export { cn } from "./utils";
 export * from "./constants";
 
 // Storage Helpers (exclude LS_KEYS to avoid conflict with constants)
-export type { StoredUser, PurchasedCourse, CourseSubscription, Certificate } from "./localStorageHelper";
+export type { StoredUser, PurchasedCourse, Certificate } from "./localStorageHelper";
 export {
   isBrowser,
   getRegisteredUsers,
@@ -29,10 +29,6 @@ export {
   getPurchases,
   addPurchase,
   clearPurchases,
-  getSubscriptions,
-  getSubscriptionByCourseId,
-  addMonthlySubscription,
-  clearSubscriptions,
   clearUserProgress,
   logout,
   getCertificates,

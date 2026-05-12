@@ -3,7 +3,6 @@ export const LS_KEYS = {
 	USER: "lms_user", // Current logged in user (session)
 	REGISTERED_USERS: "lms_registered_users", // All registered users (persistent)
 	PURCHASES: "lms_purchases",
-	SUBSCRIPTIONS: "lms_course_subscriptions",
 	CERTIFICATES: "lms_certificates", // User certificates
 };
 
@@ -167,69 +166,6 @@ export function clearPurchases() {
 	window.localStorage.removeItem(LS_KEYS.PURCHASES);
 }
 
-const SUBSCRIPTION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 hari
-
-export type CourseSubscription = {
-	courseId: string;
-	title: string;
-	startedAt: string; // ISO string
-	expiresAt: string; // ISO string
-};
-
-function readSubscriptions(): CourseSubscription[] {
-	if (!isBrowser()) return [];
-	const raw = window.localStorage.getItem(LS_KEYS.SUBSCRIPTIONS);
-	if (!raw) return [];
-	try {
-		return JSON.parse(raw) as CourseSubscription[];
-	} catch {
-		return [];
-	}
-}
-
-function persistSubscriptions(subs: CourseSubscription[]) {
-	if (!isBrowser()) return;
-	window.localStorage.setItem(LS_KEYS.SUBSCRIPTIONS, JSON.stringify(subs));
-}
-
-function filterActiveSubscriptions(subs: CourseSubscription[]) {
-	const now = Date.now();
-	return subs.filter((sub) => new Date(sub.expiresAt).getTime() > now);
-}
-
-export function getSubscriptions() {
-	const stored = readSubscriptions();
-	const active = filterActiveSubscriptions(stored);
-	if (active.length !== stored.length) {
-		persistSubscriptions(active);
-	}
-	return active;
-}
-
-export function getSubscriptionByCourseId(courseId: string) {
-	return getSubscriptions().find((sub) => sub.courseId === courseId) ?? null;
-}
-
-export function addMonthlySubscription(course: { id: string | number; title: string }) {
-	if (!isBrowser()) return null;
-	const sanitized = filterActiveSubscriptions(readSubscriptions());
-	const startedAt = new Date();
-	const expiresAt = new Date(startedAt.getTime() + SUBSCRIPTION_DURATION_MS);
-	const subscription: CourseSubscription = {
-		courseId: String(course.id),
-		title: course.title,
-		startedAt: startedAt.toISOString(),
-		expiresAt: expiresAt.toISOString(),
-	};
-	const updated = [...sanitized.filter((sub) => sub.courseId !== subscription.courseId), subscription];
-	persistSubscriptions(updated);
-	return subscription;
-}
-
-export function clearSubscriptions() {
-	if (!isBrowser()) return;
-	window.localStorage.removeItem(LS_KEYS.SUBSCRIPTIONS);
-}
 
 // Clear course progress for a specific user
 export function clearUserProgress(userEmail: string) {
@@ -251,7 +187,6 @@ export function logout() {
 	// Clear session data
 	clearUser();
 	clearPurchases();
-	clearSubscriptions();
 }
 
 // === CERTIFICATES ===

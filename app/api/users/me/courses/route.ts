@@ -11,8 +11,7 @@ export const runtime = "nodejs";
 
 function mapCourseAccess(row: any): UserCourseAccess {
   const course = row?.courses ?? row?.course ?? null;
-  const rawAccessType = row?.access_type;
-  const accessType = rawAccessType === "subscription" ? "subscription" : "lifetime";
+  const accessType = "lifetime";
 
   return {
     id: typeof row?.id === "string" ? row.id : "",
@@ -100,7 +99,8 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const courseId = typeof body.courseId === "string" ? body.courseId.trim() : "";
-  const accessType = body.accessType === "subscription" ? "subscription" : "lifetime";
+  // Force lifetime access: monthly subscription purchases have been removed
+  const accessType = "lifetime";
 
   if (!courseId) {
     return NextResponse.json({ error: "Course ID is required." }, { status: 400 });
@@ -124,11 +124,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
   const shouldIncrementEnrollment = !existingAccess.data?.id;
 
-  const now = new Date();
-  const expiresAt =
-    accessType === "subscription"
-      ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      : null;
+  const expiresAt = null;
 
   const payload = {
     id: `user_course_${randomUUID()}`,

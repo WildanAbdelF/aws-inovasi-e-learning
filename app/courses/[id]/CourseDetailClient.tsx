@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Course } from "@/types/course";
-import type { UserCourseAccess } from "@/types/user";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useInView } from "@/lib/hooks";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -21,10 +20,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
   const [open, setOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [alreadyPurchased, setAlreadyPurchased] = useState(false);
-  const [activeSubscription, setActiveSubscription] = useState<UserCourseAccess | null>(null);
-  const [checkoutMode, setCheckoutMode] = useState<"lifetime" | "subscription" | null>(null);
-  const [successType, setSuccessType] = useState<"lifetime" | "subscription" | null>(null);
-  const [successExpiresAt, setSuccessExpiresAt] = useState<string | null>(null);
+  const [checkoutMode, setCheckoutMode] = useState<"lifetime" | null>(null);
   const router = useRouter();
   const { user } = useAuth();
   const successTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -36,26 +32,15 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
     const loadAccess = async () => {
       if (!user) {
         setAlreadyPurchased(false);
-        setActiveSubscription(null);
         return;
       }
 
       try {
         const accesses = await listMyCourseAccesses();
         const related = accesses.filter((item) => item.courseId === String(course.id));
-        const lifetime = related.find((item) => item.accessType === "lifetime") ?? null;
-        const subscription =
-          related.find(
-            (item) =>
-              item.accessType === "subscription" &&
-              (!item.expiresAt || new Date(item.expiresAt).getTime() > Date.now())
-          ) ?? null;
-
-        setAlreadyPurchased(Boolean(lifetime));
-        setActiveSubscription(subscription);
+        setAlreadyPurchased(related.length > 0);
       } catch {
         setAlreadyPurchased(false);
-        setActiveSubscription(null);
       }
     };
 
@@ -70,34 +55,11 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
     };
   }, []);
 
-  const monthlyPrice = useMemo(() => {
-    const base = Math.round(course.price * 0.35);
-    const normalized = Math.max(99000, base);
-    return Math.round(normalized / 1000) * 1000;
-  }, [course.price]);
-
-  const hasMonthlyAccess = Boolean(activeSubscription);
-  const hasAnyAccess = alreadyPurchased || hasMonthlyAccess;
-  const isSubscriptionFlow = checkoutMode === "subscription";
-  const dialogTitle = isSubscriptionFlow ? "Aktivasi Langganan 1 Bulan" : "Selesaikan Pembelian";
-  const dialogDescription = isSubscriptionFlow
-    ? "Akses kursus akan aktif selama 30 hari setelah pembayaran dikonfirmasi."
-    : "Bayar sekali untuk memiliki akses kursus ini selamanya.";
-  const dialogTotal = isSubscriptionFlow ? monthlyPrice : course.price;
-  const dialogCta = isSubscriptionFlow ? "Aktifkan Langganan" : "Lanjutkan Pembayaran";
-
-  const formatDate = (value: string | null, fallback = "") => {
-    if (!value) return fallback;
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(value));
-  };
-
-  const subscriptionExpiryText = hasMonthlyAccess
-    ? formatDate(activeSubscription?.expiresAt ?? null, "30 hari ke depan")
-    : "";
+  const hasAnyAccess = alreadyPurchased;
+  const dialogTitle = "Selesaikan Pembelian";
+  const dialogDescription = "Bayar sekali untuk memiliki akses kursus ini selamanya.";
+  const dialogTotal = course.price;
+  const dialogCta = "Lanjutkan Pembayaran";
 
   const getFirstLessonPath = () => {
     const firstModule = course.modules?.[0];
@@ -119,8 +81,6 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
     }
     successTimerRef.current = setTimeout(() => {
       setShowSuccess(false);
-      setSuccessType(null);
-      setSuccessExpiresAt(null);
       router.push("/dashboard");
     }, 1500);
   };
@@ -142,38 +102,18 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
     setOpen(true);
   };
 
-  const handleSubscriptionClick = () => {
-    if (!user) {
-      window.alert("Anda harus login terlebih dahulu untuk bergabung dengan langganan.");
-      router.push("/login");
-      return;
-    }
-    setCheckoutMode("subscription");
-    setOpen(true);
-  };
-
   const handleConfirmPurchase = async () => {
     if (!checkoutMode) return;
-    const mode = checkoutMode;
 
     try {
       const access = await createMyCourseAccess({
         courseId: String(course.id),
-        accessType: mode,
+        accessType: "lifetime",
       });
 
-      if (mode === "subscription") {
-        setActiveSubscription(access);
-        setSuccessType("subscription");
-        setSuccessExpiresAt(access.expiresAt ?? null);
-      } else {
-        setAlreadyPurchased(true);
-        setSuccessType("lifetime");
-        setSuccessExpiresAt(null);
-      }
+      setAlreadyPurchased(true);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Gagal memproses pembelian kursus.";
+      const message = error instanceof Error ? error.message : "Gagal memproses pembelian kursus.";
       window.alert(message);
       return;
     }
@@ -244,11 +184,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
                   </span>
                 )}
               </div>
-              {hasMonthlyAccess && (
-                <p className="text-xs text-emerald-600 mt-2">
-                  Langganan 1 bulan aktif hingga <strong>{subscriptionExpiryText}</strong>
-                </p>
-              )}
+              
             </div>
 
             <div className="flex flex-col gap-3">
@@ -261,30 +197,6 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
                 </button>
               )}
 
-              {!alreadyPurchased && hasMonthlyAccess && (
-                <>
-                  <button
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:scale-102 transition"
-                    onClick={handleContinueLearning}
-                  >
-                    <span className="font-semibold block">Lanjutkan Pembelajaran</span>
-      
-                  </button>
-                  <button
-                    className="w-full font-semibold block border outline border-red-600 text-red-600 py-3 rounded-lg hover:bg-red-600 hover:text-white hover:scale-102 transition"
-                    onClick={handleBuyClick}
-                  >
-                    Upgrade ke Akses Lifetime
-                  </button>
-                  <button
-                    className="self-start text-xs text-blue-600 underline underline-offset-4"
-                    onClick={handleSubscriptionClick}
-                  >
-                    Perpanjang Langganan 1 Bulan
-                  </button>
-                </>
-              )}
-
               {!hasAnyAccess && (
                 <>
                   <button
@@ -293,13 +205,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
                   >
                     Beli Lifetime
                   </button>
-                  <button
-                    className="w-full border border-blue-600 text-blue-600 py-3 rounded-lg hover:bg-blue-600 hover:text-white hover:scale-102 transition"
-                    onClick={handleSubscriptionClick}
-                  >
-                    <span className="font-semibold block">Gabung Langganan 1 Bulan <br /> </span>
-                    Rp {monthlyPrice.toLocaleString("id-ID")} / 30 hari 
-                  </button>
+                  
                 </>
               )}
             </div>
@@ -311,12 +217,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
               <li>Sertifikat kelulusan</li>
             </ul>
 
-            {hasMonthlyAccess && (
-              <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
-                <p className="font-semibold text-sm text-emerald-800">Langganan aktif</p>
-                <p>Kursus tersedia selama 1 bulan dengan akses sampai {subscriptionExpiryText}.</p>
-              </div>
-            )}
+            
           </div>
         </aside>
       </div>
@@ -333,12 +234,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
               <span>Kursus</span>
               <span className="text-right font-medium">{course.title}</span>
             </div>
-            {isSubscriptionFlow && (
-              <div className="flex justify-between text-xs text-neutral-500">
-                <span>Durasi akses</span>
-                <span>30 hari</span>
-              </div>
-            )}
+          
             <div className="flex justify-between font-semibold pt-1 border-t border-dashed border-neutral-200">
               <span>Total</span>
               <span>Rp {dialogTotal.toLocaleString("id-ID")}</span>
@@ -360,11 +256,7 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
             </div>
           </div>
 
-          {isSubscriptionFlow && (
-            <p className="text-xs text-neutral-500 mb-4">
-              Tagihan tidak diperpanjang otomatis. Anda dapat memperpanjang kapan saja setelah langganan berakhir.
-            </p>
-          )}
+          
 
           <button
             className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold mt-2"
@@ -378,24 +270,11 @@ export default function CourseDetailClient({ course }: CourseDetailClientProps) 
       {showSuccess && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-lg px-8 py-6 text-center max-w-sm mx-auto">
-            <h3 className="text-lg font-semibold mb-2">
-              {successType === "subscription" ? "Langganan Aktif" : "Pembayaran Berhasil"}
-            </h3>
-            {successType === "subscription" ? (
-              <p className="text-sm text-neutral-600 mb-4">
-                Langganan 1 bulan untuk <span className="font-medium">{course.title}</span> aktif hingga{" "}
-                <span className="font-medium">{formatDate(successExpiresAt, "30 hari ke depan")}</span>.
-              </p>
-            ) : (
-              <p className="text-sm text-neutral-600 mb-4">
-                Kursus <span className="font-medium">{course.title}</span> berhasil ditambahkan ke akun Anda.
-              </p>
-            )}
-            <p className="text-xs text-neutral-500">
-              {successType === "subscription"
-                ? "Menyiapkan langganan Anda..."
-                : "Mengarahkan ke dashboard Anda..."}
+            <h3 className="text-lg font-semibold mb-2">Pembayaran Berhasil</h3>
+            <p className="text-sm text-neutral-600 mb-4">
+              Kursus <span className="font-medium">{course.title}</span> berhasil ditambahkan ke akun Anda.
             </p>
+            <p className="text-xs text-neutral-500">Mengarahkan ke dashboard Anda...</p>
           </div>
         </div>
       )}

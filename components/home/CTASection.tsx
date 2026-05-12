@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function CTASection() {
@@ -12,9 +13,11 @@ export default function CTASection() {
           Bergabunglah dengan ribuan pelajar lain dan dapatkan akses tak terbatas.
         </p>
 
-        <Button className="mt-6 bg-red-600 hover:bg-red-700 px-4 md:px-6 py-2 md:py-3">
-          Berlangganan Sekarang
-        </Button>
+        <Link href="/katalog">
+          <Button className="mt-6 bg-red-600 hover:bg-red-700 px-4 md:px-6 py-2 md:py-3">
+            Jelajahi Kursus
+          </Button>
+        </Link>
       </div>
     </section>
   );

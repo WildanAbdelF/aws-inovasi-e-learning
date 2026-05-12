@@ -5,36 +5,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Course } from "@/types/course";
 import { useEffect, useState } from "react";
 import { listMyCourseAccesses } from "@/lib/services/userApi";
-import type { UserCourseAccess } from "@/types/user";
 import { useAuth } from "@/components/providers/AuthProvider";
 
 export default function CourseCard({ course }: { course: Course }) {
   const { user } = useAuth();
   const [purchased, setPurchased] = useState(false);
-  const [subscription, setSubscription] = useState<UserCourseAccess | null>(null);
 
   useEffect(() => {
     const loadAccess = async () => {
       if (!user) {
         setPurchased(false);
-        setSubscription(null);
         return;
       }
 
       try {
         const accesses = await listMyCourseAccesses();
         const related = accesses.filter((item) => item.courseId === String(course.id));
-        setPurchased(related.some((item) => item.accessType === "lifetime"));
-        setSubscription(
-          related.find(
-            (item) =>
-              item.accessType === "subscription" &&
-              (!item.expiresAt || new Date(item.expiresAt).getTime() > Date.now())
-          ) ?? null
-        );
+        setPurchased(related.length > 0);
       } catch {
         setPurchased(false);
-        setSubscription(null);
       }
     };
 
@@ -49,11 +38,7 @@ export default function CourseCard({ course }: { course: Course }) {
             Sudah dibeli
           </span>
         )}
-        {subscription && (
-          <span className="absolute top-2 right-2 z-10 rounded-full bg-blue-600 text-white text-[10px] font-semibold px-2 py-1 shadow-sm">
-            Langganan 1 Bulan
-          </span>
-        )}
+        
 
         <img src={course.image} className="w-full h-40 object-cover" />
 
@@ -72,11 +57,7 @@ export default function CourseCard({ course }: { course: Course }) {
               {course.enrollmentCount?.toLocaleString("id-ID")} siswa
             </p>
           </div>
-          {subscription && (
-            <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-              Kursus tersedia selama 1 bulan
-            </p>
-          )}
+          
         </CardContent>
       </Card>
     </Link>

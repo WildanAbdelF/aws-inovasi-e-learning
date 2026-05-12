@@ -17,13 +17,13 @@ import {
 } from "@/lib/services/userApi";
 import type { ApiUserProfile, UserCourseAccess, UserCertificate } from "@/types/user";
 
-type TabType = "profil" | "langganan" | "lifetime" | "riwayat" | "sertifikat" | "hapus";
+type TabType = "profil" | "lifetime" | "riwayat" | "sertifikat" | "hapus";
 
 type PurchaseEntry = {
   id: string;
   title: string;
   price: number | null;
-  accessType: "lifetime" | "subscription";
+  accessType: "lifetime";
   expiresAt?: string | null;
 };
 
@@ -207,7 +207,6 @@ export default function SettingsPage() {
 
   const tabs: { key: TabType; label: string }[] = [
     { key: "profil", label: "Profil" },
-    { key: "langganan", label: "Status Langganan" },
     { key: "lifetime", label: "Kursus Lifetime" },
     { key: "riwayat", label: "Riwayat Pembayaran" },
     { key: "sertifikat", label: "Sertifikat" },
@@ -215,11 +214,7 @@ export default function SettingsPage() {
   ];
 
   const lifetimePurchases = purchases.filter((item) => item.accessType === "lifetime");
-  const activeSubscriptions = purchases.filter(
-    (item) =>
-      item.accessType === "subscription" &&
-      (!item.expiresAt || new Date(item.expiresAt).getTime() > Date.now())
-  );
+  
 
   if (loading) {
     return (
@@ -435,68 +430,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeTab === "langganan" && (
-            <div>
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">
-                Status Langganan
-              </h2>
-              {activeSubscriptions.length > 0 ? (
-                <div className="space-y-3">
-                  {activeSubscriptions.map((purchase) => (
-                    <div
-                      key={`${purchase.id}_${purchase.expiresAt}`}
-                      className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium text-neutral-900">{purchase.title}</p>
-                        <p className="text-sm text-neutral-500">
-                          Aktif hingga{" "}
-                          {purchase.expiresAt
-                            ? new Date(purchase.expiresAt).toLocaleDateString("id-ID", {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                              })
-                            : "30 hari"}
-                        </p>
-                      </div>
-                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                        Aktif
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-neutral-50 rounded-lg p-6 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-neutral-200 rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-8 h-8 text-neutral-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-neutral-600 mb-2">Belum ada langganan aktif</p>
-                  <p className="text-sm text-neutral-500 mb-4">
-                    Berlangganan untuk akses ke semua kursus premium
-                  </p>
-                  <Link
-                    href="/katalog"
-                    className="inline-block px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-                  >
-                    Lihat Paket Langganan
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
+          
 
           {activeTab === "lifetime" && (
             <div>
@@ -576,9 +510,7 @@ export default function SettingsPage() {
                           </td>
                           <td className="py-3">
                             <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                              {purchase.accessType === "subscription"
-                                ? "Langganan"
-                                : "Lifetime"}
+                              Lifetime
                             </span>
                           </td>
                         </tr>

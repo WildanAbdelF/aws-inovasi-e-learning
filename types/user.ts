@@ -14,7 +14,7 @@ export type UserCourseAccess = {
   title: string;
   price: number | null;
   pricePaid: number | null;
-  accessType: "lifetime" | "subscription";
+  accessType: "lifetime";
   status: "active" | "completed";
   expiresAt?: string | null;
   createdAt?: string;

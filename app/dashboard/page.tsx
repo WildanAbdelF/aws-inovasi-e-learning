@@ -18,7 +18,7 @@ type DashboardCourse = {
 	id: string;
 	title: string;
 	price: number | null;
-	accessType: "lifetime" | "subscription";
+	accessType: "lifetime";
 	expiresAt?: string | null;
 };
 
@@ -73,13 +73,7 @@ export default function DashboardPage() {
 				return acc;
 			}, {});
 			setCoursesById(map);
-			const activeAccesses = accesses.filter(
-				(entry) =>
-					entry.accessType !== "subscription" ||
-					!entry.expiresAt ||
-					new Date(entry.expiresAt).getTime() > Date.now()
-			);
-			setMyCourses(activeAccesses.map(mapAccess));
+			setMyCourses(accesses.map(mapAccess));
 			setCertificates(certRows.map(mapCertificate));
 		} catch (error) {
 			console.error("Failed to load courses for dashboard:", error);
@@ -190,7 +184,7 @@ export default function DashboardPage() {
 				<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
 					{myCourses.length === 0 && (
 						<div className="col-span-1 sm:col-span-2 xl:col-span-4 text-xs sm:text-sm text-neutral-600">
-							Belum ada kursus atau langganan aktif. Mulai dari katalog untuk menambah akses belajar.
+								Belum ada kursus aktif. Mulai dari katalog untuk menambah akses belajar.
 						</div>
 					)}
 					{myCourses.map((course) => {
@@ -211,7 +205,7 @@ export default function DashboardPage() {
 									course.accessType === "lifetime" ? "bg-emerald-600" : "bg-blue-600"
 								}`}
 							>
-								{course.accessType === "lifetime" ? "Lifetime" : "Langganan 1 Bulan"}
+								{course.accessType === "lifetime" ? "Lifetime" : "Terbatas"}
 							</span>
 						</div>
 						<div className="p-4 flex-1 flex flex-col">
@@ -219,7 +213,7 @@ export default function DashboardPage() {
 							<p className="text-xs text-neutral-500 mb-3">
 								{course.accessType === "lifetime"
 									? `Akses Lifetime — Rp ${course.price?.toLocaleString("id-ID")}`
-									: `Langganan aktif hingga ${formatDate(course.expiresAt)}`}
+									: `Akses terbatas hingga ${formatDate(course.expiresAt)}`}
 							</p>
 							<button
 								onClick={() => handleContinue(course.id)}

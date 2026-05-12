@@ -109,13 +109,7 @@ export default function LearnDetailPage() {
 
 			try {
 				const accesses = await listMyCourseAccesses();
-				const hasAccess = accesses.some((entry) => {
-					if (entry.courseId !== course.id) return false;
-					if (entry.accessType === "subscription" && entry.expiresAt) {
-						return new Date(entry.expiresAt).getTime() > Date.now();
-					}
-					return true;
-				});
+				const hasAccess = accesses.some((entry) => entry.courseId === course.id);
 
 				if (!hasAccess) {
 					router.replace("/dashboard");
