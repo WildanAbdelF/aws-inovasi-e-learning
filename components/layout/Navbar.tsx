@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../providers/AuthProvider";
 import { useRouter } from "next/navigation";
@@ -17,22 +18,15 @@ export default function Navbar() {
     <nav className="w-full border-b bg-white sticky top-0 z-[100] font-sans">
       <div className="max-w-7xl mx-auto flex items-center justify-between py-3 px-6">
         {/* Brand kiri */}
-        <div className="flex items-center gap-2">
-          <div
-            className={
-              "w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold " +
-              (isLoggedIn ? "bg-blue-600" : "bg-red-600")
-            }
-          >
-            <span>A</span>
-          </div>
-          <Link
-            href="/"
-            className="text-base font-semibold tracking-tight text-neutral-900"
-          >
-            AWS E-Learning
-          </Link>
-        </div>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/images/awslogo.png"
+            alt="AWS Logo"
+            width={120}
+            height={40}
+            className="h-10 w-auto"
+          />
+        </Link>
 
         {/* Tombol hamburger (mobile) */}
         <button
