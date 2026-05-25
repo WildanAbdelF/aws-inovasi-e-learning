@@ -236,7 +236,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div
             className="bg-white rounded-xl border p-4 sm:p-5"
             data-aos="fade-up"
@@ -263,17 +263,6 @@ export default function AdminDashboardPage() {
             data-aos="fade-up"
             data-aos-duration="500"
             data-aos-delay="100"
-          >
-            <p className="text-xs sm:text-sm text-neutral-500 mb-1">Active Subscriptions</p>
-            <p className="text-xl sm:text-2xl font-bold text-neutral-900">
-              {stats.activeSubscriptions.toLocaleString()}
-            </p>
-          </div>
-          <div
-            className="bg-white rounded-xl border p-4 sm:p-5"
-            data-aos="fade-up"
-            data-aos-duration="500"
-            data-aos-delay="150"
           >
             <p className="text-xs sm:text-sm text-neutral-500 mb-1">Total Enrollments</p>
             <p className="text-xl sm:text-2xl font-bold text-neutral-900">
