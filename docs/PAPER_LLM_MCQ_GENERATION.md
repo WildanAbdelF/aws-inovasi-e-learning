@@ -87,40 +87,76 @@ Lapisan Data (Output)
 
 ### 4.2 Komponen dan Tanggung Jawab
 
-**AutoQuizGenerator Component (Frontend)**
-Komponen UI ini menjadi gerbang interaksi admin untuk memicu generasi soal. Desain komponen mengikuti prinsip smart/dumb component pattern, di mana AutoQuizGenerator hanya menangani presentasi dan validasi input dasar, sementara logika API dipindahkan ke hook. Ini memungkinkan reusability dan testability yang lebih baik.
+**Quiz Generation UI Component (Frontend Layer)**
+Komponen UI ini menjadi gerbang interaksi admin untuk memicu generasi soal. Desain mengikuti prinsip smart/dumb component pattern, di mana komponen presentasi hanya menangani UI dan validasi input dasar, sementara logika API layer dipisahkan di business logic layer. Ini memungkinkan reusability dan testability yang lebih baik.
 
 Fitur-fitur:
-- Dropdown dropdown untuk memilih jumlah soal (3–15), tingkat kesulitan (mudah, sedang, sulit), dan bahasa (Indonesia, Inggris).  
-- Validasi konten: sistem memeriksa apakah ada item dengan `type === "page"` dan memiliki konten non-kosong.  
-- Loading state: tombol berubah ke mode loading dengan spinner selama proses generasi.  
-- Error display: pesan error ditampilkan dalam badge merah jika konten kosong atau API gagal.  
+- **Settings Selection**: dropdown untuk memilih jumlah soal (3–15), tingkat kesulitan (mudah, sedang, sulit), dan bahasa (Indonesia, Inggris)  
+- **Content Validation**: sistem memeriksa ketersediaan materi pembelajaran (tipe halaman dengan konten non-kosong)  
+- **Loading State**: indikator visual (spinner) dan button disabled selama proses generasi  
+- **Error Handling**: notifikasi error jika konten tidak valid atau API request gagal  
 
-Implementasi di [components/quiz/AutoQuizGenerator.tsx](components/quiz/AutoQuizGenerator.tsx) menunjukkan pattern ini dengan `useState` untuk settings dan error state, serta `disabled` prop untuk prevent double submission.
+Implementasi menggunakan state management pattern (useState) dengan dual responsibility: state untuk settings dan state untuk error handling, plus disabled state prevention untuk menghindari double submission.
 
-**useQuizGenerator Hook (Business Logic)**
-Hook ini mengimplementasikan pattern custom hook untuk memisahkan API logic dari UI. Hook mengembalikan object dengan method `generateQuiz` dan `generateQuizFromModule`, serta state management (isLoading, error, generatedQuestions).
+**Business Logic Layer - Quiz Generation Hook**
+Layer ini mengimplementasikan pattern custom hook untuk memisahkan API logic dari presentasi. Responsibility-nya:
+- **State Management**: tracking isLoading, error, generatedQuestions  
+- **API Orchestration**: fungsi generateQuiz dan generateQuizFromModule sebagai entry points  
+- **Error Transformation**: mengubah HTTP errors menjadi user-friendly messages  
 
-Alasan desain ini berdasarkan prinsip separation of concerns: logic API terpisah dari presentasi, memudahkan testing dan penggunaan ulang di component lain.
+Alasan desain ini berdasarkan prinsip separation of concerns: business logic terpisah dari presentasi layer, sehingga memudahkan unit testing dan reusability di multiple UI contexts.
 
-Contoh:
-```typescript
-const { generateQuiz, isLoading, error } = useQuizGenerator();
-const questions = await generateQuiz(content, title, options);
+Interface yang diexpose:
+```
+BusinessLogicLayer {
+  generateQuiz(content, title, config) → Promise<QuizQuestion[]>
+  generateQuizFromModule(moduleItems, config) → Promise<QuizQuestion[]>
+  state: { isLoading, error, generatedQuestions }
+}
 ```
 
-**API Route (Next.js POST)**
-Endpoint [app/api/quiz/generate/route.ts](app/api/quiz/generate/route.ts) menangani request dengan validasi minimal:
-- Memastikan `content` atau `moduleItems` ada (400 error jika tidak).  
-- Memanggil service yang sesuai (single content vs module).  
-- Error handling: menangkap exception dari service dan mengembalikan 500 dengan pesan error.  
+**API Layer - Request/Response Contract**
+API endpoint menangani HTTP requests dengan validasi input:
+- **Input Validation**: memastikan `content` atau `moduleItems` ada, return 400 Bad Request jika missing  
+- **Routing Logic**: mengarahkan ke service layer yang sesuai (single content generation vs module-level generation)  
+- **Error Handling**: menangkap exception dari service layer dan mengembalikan error response dengan HTTP 500 dan message informatif  
 
-**Quiz Generator Service (Core Logic)**
-Service layer di [lib/services/quizGenerator.ts](lib/services/quizGenerator.ts) adalah inti sistem. Tanggung jawabnya:
-- Membangun prompt dengan instruksi yang tepat.  
-- Memilih LLM provider (Gemini > OpenAI > Dummy).  
-- Parsing response JSON dengan error recovery.  
-- Transformasi ke QuizQuestion format.  
+Request schema:
+```
+POST /api/quiz/generate
+{
+  content?: string,           // Single page content
+  moduleItems?: Array<{       // Or multiple module items
+    title: string,
+    content: string,
+    type: string
+  }>,
+  config?: {
+    numberOfQuestions: 3-15,
+    difficulty: "easy" | "medium" | "hard",
+    language: "id" | "en"
+  }
+}
+```  
+
+**Service Layer - Core Generation Logic**
+Service layer adalah inti sistem dengan tanggung jawab:
+- **Prompt Engineering**: membangun prompt dengan instruksi terstruktur, context injection dari materi  
+- **LLM Provider Selection**: mengimplementasikan strategy pattern untuk fallback (Gemini → OpenAI → Fallback)  
+- **Response Parsing**: robust JSON parsing dengan error recovery (regex extraction, markdown cleanup)  
+- **Output Transformation**: normalisasi ke QuizQuestion schema standard  
+
+Algorithm umum:
+```
+1. Input: content/moduleItems + config
+2. BuildPrompt(content, config) → structured prompt
+3. SelectProvider() → determine which LLM to use
+4. CallLLM(prompt) → get response
+5. ParseResponse(response) → extract JSON safely
+6. ValidateSchema(parsed) → check required fields
+7. TransformToQuizQuestion(parsed) → output standard format
+8. Return: QuizQuestion[]
+```  
 
 ### 4.3 Rasionalisasi Desain Berlapis
 Arsitektur berlapis ini dirancang dengan inspirasi dari enterprise architecture patterns dan microservice principles. Setiap lapisan memiliki boundary yang jelas:
@@ -197,47 +233,41 @@ Alasan diprioritaskan Gemini adalah cost efficiency di development phase, sedang
 Parameter `temperature` 0.7 dipilih karena cukup kreatif untuk menghasilkan distractor unik, namun tidak terlalu random yang menyebabkan output tidak fokus.
 
 ### 5.3 Response Parsing dan Error Recovery
-Parsing implementation di [lib/services/quizGenerator.ts](lib/services/quizGenerator.ts) menerapkan robust error handling:
+Parsing implementation menerapkan robust error handling dengan multi-layer recovery strategy:
 
-```typescript
-function parseQuizResponse(response: string): QuizQuestion[] {
-  try {
-    // 1. Ekstrak JSON dengan regex (berjaga jika ada teks sebelum/sesudah)
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    let jsonStr = jsonMatch ? jsonMatch[0] : response.trim();
-    
-    // 2. Bersihkan markdown code fence
-    jsonStr = jsonStr
-      .replace(/^```json\n?/, '')
-      .replace(/^```\n?/, '')
-      .replace(/\n?```$/, '');
-    
-    // 3. Parse JSON
-    const parsed: GeneratedQuiz = JSON.parse(jsonStr);
-    
-    // 4. Validasi struktur minimal
-    if (!parsed.questions || !Array.isArray(parsed.questions)) {
-      throw new Error("Property 'questions' tidak ditemukan");
-    }
-    
-    // 5. Transformasi dan normalisasi
-    return parsed.questions.map((q, idx) => ({
-      id: q.id || `q${idx + 1}`,
-      questionText: q.questionText,
-      options: q.options.map((opt, optIdx) => ({
-        id: opt.id || `q${idx + 1}-${chr(optIdx)}`,
-        text: opt.text,
-      })),
-      correctOptionId: q.correctOptionId,
-    }));
-  } catch (error) {
-    console.error("Parse failed:", error);
-    throw new Error("Gagal memproses response dari AI");
-  }
-}
+**Parsing Algorithm**:
+```
+Input: LLM response string
+
+Step 1: Regex Extraction
+  - Gunakan regex /\{[\s\S]*\}/ untuk extract JSON object
+  - Berjaga jika ada text sebelum/sesudah JSON
+  - Jika tidak match, gunakan trimmed response
+
+Step 2: Markdown Cleanup
+  - Hapus ```json code fence
+  - Hapus ``` closing fence
+  - Hapus newlines di boundary
+
+Step 3: JSON Parsing
+  - Parse string to object
+  - If error, log dan throw
+
+Step 4: Schema Validation
+  - Check kehadiran field wajib: questions array
+  - Check tipe data: questions must be array
+  - Check item schema: setiap question punya id, questionText, options, correctOptionId
+
+Step 5: Normalisasi
+  - Assign default id jika missing: q1, q2, ...
+  - Assign option id: q1-a, q1-b, q1-c, q1-d, ...
+  - Keseragaman field names
+
+Output: QuizQuestion[] (standard format)
+Error: throw dengan message informatif
 ```
 
-Error recovery strategy ini mengikuti prinsip "fail fast but informative", di mana kesalahan parsing dideteksi segera dengan pesan yang jelas untuk debugging.
+Error recovery strategy ini mengikuti prinsip "fail fast but informative", di mana kesalahan parsing dideteksi segera dengan pesan yang jelas untuk downstream debugging dan monitoring.
 
 ### 5.4 Kontrol Kualitas Berbasis Output Schema
 Output format JSON yang ketat adalah mekanisme kontrol kualitas pertama. Dengan mendefinisikan schema eksplisit, sistem dapat:
@@ -261,23 +291,34 @@ interface QuizOption {
 ```
 
 ### 5.5 Module-Level Quiz Generation
-Untuk modul, sistem menggabungkan konten dari multiple items sebelum kirim ke LLM:
+Untuk modul yang terdiri dari multiple learning items, sistem menerapkan context aggregation strategy:
 
-```typescript
-export async function generateQuizForModule(
-  moduleItems: Array<{ title: string; content: string; type: string }>,
-  config?: Partial<QuizGeneratorConfig>
-): Promise<QuizQuestion[]> {
-  const combinedContent = moduleItems
-    .filter((item) => item.type === "page")
-    .map((item) => `## ${item.title}\n${item.content}`)
-    .join("\n\n");
+**Algorithm**:
+```
+Input: moduleItems[] (array of learning objects)
+        config (numberOfQuestions, difficulty, language)
 
-  return generateQuizFromMaterial(combinedContent, "Module Quiz", config);
-}
+Step 1: Filter Items
+  - Hanya include items dengan type="page" (pembelajaran content)
+  - Skip items tipe lain (video, assignment, dll)
+
+Step 2: Aggregate Content
+  - Untuk setiap page item:
+    - Format: "## [item.title]\n[item.content]"
+    - Join dengan separator "\n\n"
+  - Result: satu unified content string
+
+Step 3: Call Generation Service
+  - Gunakan combined content sebagai source material
+  - Set title to "Module Quiz"
+  - Pass config tanpa modifikasi
+
+Step 4: Return
+  - Output: QuizQuestion[] (same format as single content)
+  - Soal yang dihasilkan mencakup topik dari multiple items
 ```
 
-Pendekatan ini memastikan LLM memiliki konteks lengkap dari seluruh modul, sehingga soal yang dihasilkan mencakup topik-topik utama across items.
+Rationale untuk aggregation: dengan memberikan full module context ke LLM, sistem memastikan soal mencakup learning objectives dari seluruh modul, bukan hanya one item. Ini meningkatkan coverage dan inter-topic connections dalam assessment.
 
 ### 5.6 Implementasi Human-in-the-Loop Review
 Setelah generasi otomatis, sistem menempatkan tahapan review obligatory di admin UI. Alasan ini berdasarkan studi Biancini et al. (2024) yang menunjukkan bahwa even dengan LLM terbaik, human review mengurangi error rate signifikan.
@@ -289,37 +330,56 @@ Workflow:
 4. Baru setelah review, soal bisa di-publish.  
 
 ### 5.7 State Management dan Async Handling
-Hook `useQuizGenerator` menggunakan `useCallback` untuk memoize function dan prevent unnecessary re-renders:
+Business logic layer menggunakan functional state management pattern untuk ensure consistency:
 
-```typescript
-const generateQuiz = useCallback(async (content, title, options) => {
-  setIsLoading(true);
-  setError(null);
-  try {
-    const response = await fetch("/api/quiz/generate", { ... });
-    if (!response.ok) throw new Error(...);
-    const data = await response.json();
-    setGeneratedQuestions(data.questions);
-    return data.questions;
-  } catch (err) {
-    setError(err.message);
-    throw err;
-  } finally {
-    setIsLoading(false);
-  }
-}, []);
+**State Machine**:
+```
+Initial State: { isLoading: false, error: null, questions: [] }
+
+Event: generateQuiz(content, config)
+  → setState({ isLoading: true, error: null })
+  → callAPI(POST /quiz/generate)
+  → if success:
+      setState({ isLoading: false, questions: response.questions })
+      return questions
+  → if error:
+      setState({ isLoading: false, error: error.message })
+      throw error
 ```
 
-Pattern ini memastikan state consistency dan error propagation yang jelas.
+**Pattern Benefits**:
+- **Memoization**: function di-cache sehingga tidak trigger re-render di UI
+- **State Consistency**: state diupdate atomically (tidak partial updates)
+- **Error Propagation**: error di-catch dan di-store di state, plus di-throw untuk handling di caller
+- **Cleanup**: isLoading di-reset di finally block untuk handle both success dan error cases
+
+Pattern ini ensures predictable behavior dan easier debugging dalam async workflows.
 
 ### 5.8 Configuration dan Environment Variables
-Sistem mendukung configuration melalui `.env.local`:
-```env
-OPENAI_API_KEY=sk_...
-GOOGLE_API_KEY=AIza_...
+Sistem menggunakan environment-based configuration untuk provider selection:
+
+**Configuration Pattern**:
+```
+Environment Variables:
+  OPENAI_API_KEY     (optional)
+  GOOGLE_API_KEY     (optional)
+
+Provider Priority Logic:
+  if GOOGLE_API_KEY exists → use Gemini API
+  else if OPENAI_API_KEY exists → use OpenAI API
+  else → use Fallback (dummy/mock)
+
+Model Parameters (tunable):
+  temperature: 0.7  (balance creativity vs consistency)
+  max_tokens: varies per provider
+  response_format: JSON (structured output)
 ```
 
-Strategi ini memungkinkan easy switching antar provider tanpa mengubah kode aplikasi.
+**Benefits**:
+- **Flexibility**: switch provider hanya dengan environment variable, tanpa code change
+- **Cost Optimization**: bisa memilih provider based on budget (Gemini gratis tier vs OpenAI paid)
+- **Development-friendly**: fallback dummy response untuk local development tanpa API key
+- **Production-ready**: support multiple providers untuk redundancy dan fallback strategy
 
 ---
 
@@ -452,6 +512,358 @@ Untuk deployment production:
 
 ### 8.5 Kesimpulan Akhir
 Desain sistem integrasi LLM untuk generasi MCQ menunjukkan feasibility teknis dan alignment dengan prinsip pedagogis. Dengan kontrol kualitas berlapis dan human-in-the-loop, sistem ini potensi menjadi tool valuable untuk accelerate course development di platform e-learning modern.
+
+---
+
+## Pernyataan Ketersediaan Data
+Untuk mendukung transparansi dan reproducibility penelitian, implementasi sistem ini didokumentasikan lengkap dalam paper ini:
+
+- **Main Content**: Sections 1-8 menyajikan research contribution, methodology, design, dan evaluation plan
+- **Implementation Details**: Section 9 (Appendix) berisi technical details, type definitions, prompt templates, API examples, evaluation rubric, testing strategy, monitoring, dan deployment guide
+
+Peneliti yang tertarik untuk replicate atau extend penelitian ini dapat mengacu pada:
+- Section 9.2-9.4: Type definitions dan service layer pseudocode
+- Section 9.5-9.6: API specifications dan request/response examples
+- Section 9.7-9.8: Evaluation rubric dan inter-rater reliability methodology
+- Section 9.9-9.12: Testing strategy, monitoring, deployment checklist, dan known limitations
+
+Untuk akses ke source code implementasi atau lebih lengkap technical documentation, silakan hubungi corresponding author.
+
+---
+
+## Referensi ke Supplementary Content
+- **Section 9**: Complete implementation guide, type definitions, prompt templates, API examples
+- **Related Documentation**: AUTO_QUIZ_GENERATOR.md (feature documentation), SUPABASE_SCHEMA.md (database schema) tersedia di project repository
+
+---
+
+## Deklarasi Conflict of Interest
+Para author menyatakan tidak ada conflict of interest yang relevan dengan publikasi ini. Tidak ada hubungan finansial, personal, atau profesional yang dapat mempengaruhi hasil penelitian atau interpretasi findings.
+
+---
+
+## Pernyataan Pendanaan
+Penelitian ini tidak menerima grant atau dukungan finansial khusus dari organisasi publik, komersial, atau non-profit manapun. Penelitian dilakukan menggunakan resources institusional dan open-source tools yang tersedia.
+
+---
+
+## Kontribusi Author
+[Jika paper ini multi-author, sebutkan kontribusi masing-masing. Jika single author, dapat dihapus atau ditulis singkat]
+
+---
+
+## 9. APPENDIX: Implementation Details dan Technical Reference
+
+### 9.1 Arsitektur Folder Project (Reference)
+
+Project menggunakan Next.js App Router dengan struktur berikut:
+
+```
+project-root/
+├── app/
+│   ├── api/quiz/generate/route.ts           (API endpoint)
+│   └── [other page routes]
+├── components/quiz/
+│   └── AutoQuizGenerator.tsx                (UI component)
+├── lib/
+│   ├── services/quizGenerator.ts            (Core logic)
+│   ├── hooks/useQuizGenerator.ts            (React hook)
+│   └── [utilities]
+├── types/course.ts                          (Type definitions)
+|
+└── [configuration files]
+```
+
+### 9.2 Type Definitions
+
+**Core Quiz Types:**
+
+```typescript
+interface QuizQuestion {
+  id: string;
+  questionText: string;
+  options: QuizOption[];
+  correctOptionId: string;
+  explanation?: string;
+  difficulty?: "easy" | "medium" | "hard";
+}
+
+interface QuizOption {
+  id: string;
+  text: string;
+}
+
+interface QuizGeneratorConfig {
+  numberOfQuestions: number;  // 3 to 15
+  difficulty: "easy" | "medium" | "hard";
+  language: "id" | "en";
+}
+
+interface GeneratedQuiz {
+  questions: QuizQuestion[];
+  generatedAt?: Date;
+  model?: string;
+}
+
+interface ModuleItem {
+  id: string;
+  title: string;
+  content: string;
+  type: "page" | "video" | "assignment" | "quiz";
+}
+```
+
+### 9.3 Prompt Engineering Templates
+
+**Template untuk Bahasa Indonesia:**
+
+```
+Anda adalah sistem pembuat kuis otomatis untuk platform e-learning.
+Tugas: buat MCQ berkualitas tinggi dari materi yang diberikan.
+
+INFORMASI MATERI
+- Judul: [TITLE]
+- Bahasa: Indonesia
+- Tingkat Kesulitan: [DIFFICULTY - mudah/sedang/sulit]
+
+KONTEN PEMBELAJARAN
+[MATERIAL_CONTENT]
+
+INSTRUKSI
+1. Jumlah soal: [NUM_QUESTIONS]
+2. Format: 4 opsi (A, B, C, D), satu benar
+3. Tingkat kesulitan:
+   - Mudah: recall & comprehension
+   - Sedang: application & analysis
+   - Sulit: synthesis & evaluation
+4. Distractor quality:
+   - Plausible (masuk akal)
+   - Berbeda satu sama lain
+   - Relevan dengan topik
+5. CONSTRAINT KRITIS: SEMUA jawaban HARUS ada di materi
+6. Prioritas: KUALITAS > KUANTITAS
+
+FORMAT OUTPUT (HANYA JSON):
+{
+  "questions": [
+    {
+      "id": "q1",
+      "questionText": "...",
+      "options": [
+        {"id": "q1-a", "text": "[From material]"},
+        {"id": "q1-b", "text": "[Distractor]"},
+        {"id": "q1-c", "text": "[Distractor]"},
+        {"id": "q1-d", "text": "[Distractor]"}
+      ],
+      "correctOptionId": "q1-a",
+      "explanation": "..."
+    }
+  ]
+}
+```
+
+### 9.4 LLM Provider Configuration
+
+```typescript
+// OpenAI
+const OPENAI_CONFIG = {
+  model: "gpt-4o-mini",
+  temperature: 0.7,
+  max_tokens: 2000
+};
+
+// Google Gemini
+const GEMINI_CONFIG = {
+  model: "gemini-1.5-flash-latest",
+  temperature: 0.7,
+  maxOutputTokens: 2000,
+  responseMimeType: "application/json"
+};
+
+// Provider selection
+function selectProvider() {
+  if (process.env.GOOGLE_API_KEY) return new GeminiProvider();
+  if (process.env.OPENAI_API_KEY) return new OpenAIProvider();
+  return new DummyProvider();  // Fallback
+}
+```
+
+### 9.5 Service Layer Pseudocode
+
+```
+Algorithm: generateQuizFromMaterial(content, config)
+1. BuildPrompt(content, config) → prompt
+2. SelectProvider() → provider
+3. CallLLM(provider, prompt) → response
+4. ParseResponse(response):
+   a. ExtractJSON(response)
+   b. CleanMarkdown(json)
+   c. Parse(json)
+   d. ValidateSchema(parsed)
+   e. Transform(parsed)
+5. Return: QuizQuestion[]
+
+Function ParseResponse Error Recovery:
+- Try: regex extraction /\{[\s\S]*\}/
+- Try: markdown cleanup (remove ```json, ```)
+- Try: JSON.parse()
+- Validate: questions array, required fields
+- Normalize: assign default IDs if missing
+- Transform: consistent format (q1, q1-a, etc)
+```
+
+### 9.6 API Request/Response Examples
+
+**Request (Single Content):**
+```json
+POST /api/quiz/generate
+{
+  "content": "Machine learning adalah sub-field dari AI...",
+  "title": "Intro to ML",
+  "config": {
+    "numberOfQuestions": 5,
+    "difficulty": "medium",
+    "language": "id"
+  }
+}
+```
+
+**Request (Module):**
+```json
+POST /api/quiz/generate
+{
+  "moduleItems": [
+    {"title": "Topic A", "content": "...", "type": "page"},
+    {"title": "Topic B", "content": "...", "type": "page"}
+  ],
+  "config": {
+    "numberOfQuestions": 8,
+    "difficulty": "hard",
+    "language": "en"
+  }
+}
+```
+
+**Success Response (HTTP 200):**
+```json
+{
+  "success": true,
+  "questions": [
+    {
+      "id": "q1",
+      "questionText": "Apa perbedaan antara...",
+      "options": [...],
+      "correctOptionId": "q1-b",
+      "explanation": "..."
+    }
+  ],
+  "count": 5
+}
+```
+
+**Error Response (HTTP 400):**
+```json
+{
+  "error": "ValidationError",
+  "message": "Either 'content' or 'moduleItems' is required",
+  "status": 400
+}
+```
+
+### 9.7 Evaluation Rubric Detail
+
+Rubrik penilaian dengan 4 dimensi × 5 skala:
+
+**Dimensi 1: Correctness (Ketepatan Jawaban)**
+- 1: Tidak sesuai materi atau tidak ada
+- 2: Sesuai tapi penjelasan tidak lengkap
+- 3: Sesuai dan penjelasan cukup
+- 4: Sesuai dan penjelasan jelas
+- 5: Sangat jelas, komprehensif, evidence-based
+
+**Dimensi 2: Relevance (Keterkaitan Materi)**
+- 1: Tidak relevan / out of scope
+- 2: Sedikit relevan, topik tidak fokus
+- 3: Cukup relevan
+- 4: Sangat relevan, menguji konsep kunci
+- 5: Menguji deep understanding
+
+**Dimensi 3: Clarity (Kejelasan Stem)**
+- 1: Ambiguous, tidak jelas
+- 2: Kurang jelas, banyak interpretasi
+- 3: Cukup jelas, sedikit ambiguity
+- 4: Jelas, spesifik
+- 5: Sangat jelas, unambiguous, concise
+
+**Dimensi 4: Distractor Quality (Kualitas Opsi Salah)**
+- 1: Obvious, learner langsung tahu salah
+- 2: Kurang plausible
+- 3: Cukup plausible, bisa menipu beginner
+- 4: Sangat plausible, butuh good understanding
+- 5: Sophisticated, plausible untuk intermediate learner
+
+**Quality Threshold**: Rata-rata skor ≥ 3.5/5 per dimensi
+
+### 9.8 Inter-Rater Reliability
+
+**Metrik**: Fleiss' Kappa (untuk 3+ rater)
+
+$$\kappa = \frac{\bar{P}_o - \bar{P}_e}{1 - \bar{P}_e}$$
+
+Dimana:
+- $\bar{P}_o$ = observed agreement
+- $\bar{P}_e$ = expected agreement by chance
+
+**Interpretasi**:
+- κ > 0.7: Substantial agreement (acceptable)
+- κ ≥ 0.8: Almost perfect agreement (excellent)
+
+### 9.9 Testing Strategy Outline
+
+**Unit Tests**:
+- parseQuizResponse: valid JSON, markdown-wrapped, extra text, invalid schema
+- buildPrompt: required sections, content injection, language correctness
+
+**Integration Tests**:
+- API endpoint: single content generation, module generation, missing input validation
+- Provider selection: fallback chain, error handling per provider
+
+### 9.10 Monitoring Metrics
+
+Metrics to track per generation:
+- `provider` (gemini/openai/dummy)
+- `duration_ms` (latency)
+- `success` (true/false)
+- `num_questions_requested` vs `num_questions_generated`
+- `error_message` (if failed)
+
+**Critical Errors to Monitor**:
+1. API Rate Limit Exceeded → Retry dengan backoff
+2. Invalid JSON Response → Log sample, alert team
+3. Schema Validation Failed → Flag untuk manual review
+4. Content Too Long → Split ke multiple requests
+
+### 9.11 Deployment Checklist
+
+- [ ] Environment variables configured (API keys)
+- [ ] Provider fallback chain tested
+- [ ] Error handling tested per provider
+- [ ] Rate limiting implemented
+- [ ] Logging & monitoring enabled
+- [ ] Human-in-the-loop UI functional
+- [ ] Database schema updated
+- [ ] Privacy policy updated (re: data sent to LLM)
+
+### 9.12 Known Limitations dan Mitigasi
+
+| Limitation | Impact | Mitigation |
+|-----------|--------|-----------|
+| LLM Hallucination | Wrong answers | Prompt constraint + human review |
+| Content Length Limit | Long modules fail | Split into chunks |
+| Language Issues | Grammar errors | Prompt template tuning |
+| Distractor Quality | Too obvious | Manual review + fine-tuning |
+| Cost | API charges | Cache + optimize prompts |
+| Latency | Slow batches | Async queue + batch processing |
 
 ---
 
