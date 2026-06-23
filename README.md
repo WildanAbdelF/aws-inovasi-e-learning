@@ -6,10 +6,11 @@
 ![React](https://img.shields.io/badge/React-19.x-61DAFB?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.x-06B6D4?style=for-the-badge&logo=tailwindcss)
+![Supabase](https://img.shields.io/badge/Supabase-Database_&_Auth-3ECF8E?style=for-the-badge&logo=supabase)
 
 **Platform e-learning modern untuk pembelajaran digital yang interaktif dan engaging**
 
-[Demo](#demo) • [Fitur](#-fitur-utama) • [Instalasi](#-instalasi) • [Struktur](#-struktur-project) • [Roadmap](#-roadmap)
+[Fitur](#-fitur-utama) • [Arsitektur](#-arsitektur) • [Instalasi](#-instalasi) • [Struktur](#-struktur-project) • [Database](#-database-schema)
 
 </div>
 
@@ -17,49 +18,54 @@
 
 ## 📖 Tentang Project
 
-AWS Inovasi E-Learning adalah platform Learning Management System (LMS) yang dibangun dengan teknologi modern. Platform ini dirancang untuk memberikan pengalaman belajar yang interaktif dengan fitur-fitur seperti:
+AWS Inovasi E-Learning adalah platform Learning Management System (LMS) modern yang dibangun sebagai *Full-Stack Next.js Application*. Platform ini sudah dirancang untuk berjalan end-to-end menggunakan **REST API internal** yang terhubung langsung ke **Supabase (PostgreSQL, Auth, dan Storage)**.
 
-- 🎥 Video pembelajaran embedded
-- 📝 Quiz interaktif dengan scoring
-- 🏆 Sistem sertifikat otomatis
-- 👨‍💼 Dashboard admin untuk manajemen konten
-- 📱 Fully responsive untuk semua device
+Project ini tidak lagi berada dalam tahap demo *localStorage*, melainkan sudah menjadi sistem e-learning operasional dengan integrasi database terpusat yang scalable.
 
-> **Note**: Versi saat ini adalah **Demo Stage** menggunakan localStorage. Production version akan menggunakan **Supabase** untuk backend.
+---
+
+## 🏗 Arsitektur
+
+Aplikasi ini menggunakan arsitektur terkini dalam ekosistem Next.js. Komunikasi antara Client dan Database sepenuhnya di-proxy melalui *Route Handlers* Next.js di `/app/api`, menjamin keamanan sekaligus fleksibilitas pengelolaan bisnis logic.
+
+### Alur Utama (High-Level Architecture):
+1. **Client / Frontend (React Server & Client Components)**: Menangani UI/UX dengan optimasi SEO.
+2. **Next.js API Routes (`/api/...`)**: Bertindak sebagai *BFF (Backend For Frontend)*. Menyembunyikan *logic* dan interaksi langsung dengan Supabase guna keamanan.
+3. **Supabase (Backend-as-a-Service)**:
+   - **Database**: PostgreSQL untuk menyimpan data `users`, `courses`, `modules`, `progress`, dll.
+   - **Auth**: Autentikasi berbasis token, dengan integrasi Next.js Middleware untuk proteksi _route_ aman (menggunakan _HttpOnly Cookies_).
+   - **Storage**: Digunakan untuk menyimpan asset publik seperti _thumbnail courses_ dan _media upload_.
+4. **LLM Engine (Opsional - Backend)**: Integrasi external AI (seperti Gemini/OpenAI) untuk men-generate quiz berbasis Artificial Intelligence di sisi admin.
 
 ---
 
 ## ✨ Fitur Utama
 
 ### 🔐 Authentication System
-- Login & Register dengan email/password
-- Role-based access (Admin / User)
-- Protected routes dengan redirect
-- Forgot password flow
+- Supabase Auth Authentication.
+- Secure HttpOnly Cookie Session Management.
+- Login & Register, validasi *Role-Based Access Control* (Admin vs User).
+- *Forgot Password Flow* bawaan Supabase (Email Link).
 
-### 📚 Course Management
-- Katalog kursus dengan search & filter
-- Detail kursus dengan curriculum preview
-- Purchase & subscription system
-- Admin CRUD untuk courses
+### 📚 Course & Content Management
+- Katalog kursus dengan kapabilitas pencarian & filtering.
+- Kursus bersifat modular (Module $\rightarrow$ Content/Quiz).
+- Pembelian & manajemen langganan (_Subscription_ dan _Lifetime Access_).
+- Manajemen data *Course* (CRUD lengkap oleh Admin) via API Supabase.
+- Upload Gambar ke public bucket Supabase.
 
-### 📖 Learning Experience
-- Module-based learning path
-- Video & text content support
-- Interactive quiz dengan instant feedback
-- Progress tracking per-user
-- Auto-save progress
+### 🤖 AI Quiz Generation
+- Generator soal (MCQ) yang ditenagai oleh konfigurasi sistem *LLM* otomatis.
+- Admin bisa generate *quiz/assessment* hanya dari teks/konten materi, yang diolah di *API Layer*.
+
+### 📖 Learning Experience & Tracking
+- Player modul belajar (teks, video embdded).
+- Tes/Quiz interaktif dengan sistem _scoring_.
+- Pelacakan progress pengguna disimpan aman ke database (`user_progress`).
 
 ### 🏆 Certificate System
-- Auto-generate setelah course completion
-- Download sebagai PDF
-- Certificate gallery di dashboard
-
-### 👨‍💼 Admin Dashboard
-- Course management (CRUD)
-- User management
-- Access control (grant/revoke)
-- Analytics overview
+- *Auto-generate* setelah pengguna menyelesaikan seluruh materi & lulus ujian.
+- Cetak PDF client-side dengan *jsPDF* & *html2canvas*.
 
 ---
 
@@ -72,11 +78,10 @@ AWS Inovasi E-Learning adalah platform Learning Management System (LMS) yang dib
 | **UI Library** | React 19.x |
 | **Styling** | TailwindCSS 4.x |
 | **Components** | shadcn/ui (Radix UI) |
-| **Forms** | React Hook Form + Zod |
+| **Database & Auth** | Supabase (PostgreSQL) |
+| **File Storage** | Supabase Storage (`course-media` bucket) |
 | **Animation** | AOS (Animate On Scroll) |
 | **Icons** | Lucide React |
-| **PDF** | jsPDF + html2canvas |
-| **Storage** | localStorage (demo) → Supabase (planned) |
 
 ---
 
@@ -84,231 +89,107 @@ AWS Inovasi E-Learning adalah platform Learning Management System (LMS) yang dib
 
 ### Prerequisites
 - Node.js ≥ 18.x
-- npm atau yarn atau pnpm
+- Akun dan Project Supabase yang sudah disetup (lihat `supabase/schema.sql`).
 
 ### Quick Start
 
-```bash
-# 1. Clone repository
-git clone https://github.com/WildanAbdelF/aws-inovasi-e-learning.git
-cd aws-inovasi-e-learning
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/WildanAbdelF/aws-inovasi-e-learning.git
+   cd aws-inovasi-e-learning
+   ```
 
-# 2. Install dependencies
-npm install
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-# 3. Run development server
-npm run dev
-```
+3. **Environments Setup**
+   Buat file `.env.local` di root, isi variabel konfigurasi:
+   ```env
+   NEXT_PUBLIC_APP_URL="http://localhost:3000"
+   
+   # SUPABASE CONFIGURATION
+   NEXT_PUBLIC_SUPABASE_URL="https://YOUR_PROJECT_ID.supabase.co"
+   NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+   SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY"
+   
+   # STORAGE BUCKET (opsional, default: course-media)
+   NEXT_PUBLIC_SUPABASE_COURSE_MEDIA_BUCKET="course-media"
+   
+   # AI QUIZ GENERATOR API KEY (misal Google Gemini)
+   GEMINI_API_KEY="YOUR_API_KEY"
+   ```
 
-Buka browser: **http://localhost:3000**
+4. **Database Setup**
+   Jalankan query di `supabase/schema.sql` pada SQL Editor di dashboard Supabase milik Anda untuk membuat table-table terkait.
 
-### Available Scripts
-
-```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run start    # Start production server
-npm run lint     # Run ESLint
-```
+5. **Run development server**
+   ```bash
+   npm run dev
+   ```
+   Buka browser: **http://localhost:3000**
 
 ---
 
 ## 📁 Struktur Project
 
+Struktur utama sudah menerapkan praktik pemisahan tugas (*separation of concern*):
+
 ```
 aws-inovasi-e-learning/
 │
-├── 📂 app/                          # Next.js App Router
-│   ├── 📄 layout.tsx                # Root layout dengan providers
-│   ├── 📄 page.tsx                  # Homepage
-│   ├── 📄 globals.css               # Global styles
+├── 📂 app/                          # Next.js App Router (UI & API)
+│   ├── 📂 api/                      # 📡 BE Route Handlers (API Server)
+│   │   ├── 📂 admin/                # API manajemen admin (metrics, dll)
+│   │   ├── 📂 auth/                 # API autentikasi & manajemen sesi cookie
+│   │   ├── 📂 courses/              # API public & detail kursus
+│   │   ├── 📂 quiz/                 # 🤖 API integrasi AI Auto-generate
+│   │   ├── 📂 uploads/              # API upload image ke Supabase Storage
+│   │   └── 📂 users/                # API profil pengguna dan progress
 │   │
-│   ├── 📂 admin/                    # 🔒 Admin pages (protected)
-│   │   ├── 📄 page.tsx              # Admin dashboard
-│   │   ├── 📂 courses/              # Course management
-│   │   │   ├── 📂 new/              # Create new course
-│   │   │   └── 📂 [id]/             # Edit course
-│   │   ├── 📂 dashboard/            # Admin analytics
-│   │   └── 📂 users/                # User management
-│   │
-│   ├── 📂 courses/                  # Public course pages
-│   │   └── 📂 [id]/                 # Course detail
-│   │
-│   ├── 📂 dashboard/                # 🔒 User dashboard
-│   ├── 📂 katalog/                  # Course catalog
-│   │
-│   ├── 📂 learn/                    # 🔒 Learning pages
-│   │   └── 📂 [courseId]/
-│   │       └── 📂 [moduleId]/
-│   │           └── 📂 [itemId]/     # Lesson/quiz page
-│   │
-│   ├── 📂 login/                    # Auth pages
-│   ├── 📂 register/
-│   ├── 📂 forgot-password/
-│   │   ├── 📂 sent/
-│   │   └── 📂 reset/
-│   │
-│   └── 📂 settings/                 # User settings
+│   ├── 📂 admin/                    # 🔒 Admin Pages (Dashboard, Course CRUD)
+│   ├── 📂 courses/                  # Course Public Pages
+│   ├── 📂 learn/                    # 🔒 Learning Path View
+│   └── 📂 (auth)/                   # Halaman Login/Register/Reset Password
 │
-├── 📂 components/                   # React components
-│   ├── 📄 index.ts                  # Barrel exports
-│   │
-│   ├── 📂 certificate/              # Certificate components
-│   │   └── 📄 CertificateModal.tsx
-│   │
-│   ├── 📂 course/                   # Course components
-│   │   ├── 📄 CourseCard.tsx
-│   │   ├── 📄 CourseCatalog.tsx
-│   │   ├── 📄 CourseList.tsx
-│   │   └── 📄 index.ts
-│   │
-│   ├── 📂 home/                     # Landing page sections
-│   │   ├── 📄 HeroSection.tsx
-│   │   ├── 📄 FeaturedCourses.tsx
-│   │   ├── 📄 LearningModels.tsx
-│   │   ├── 📄 Testimonials.tsx
-│   │   ├── 📄 CTASection.tsx
-│   │   └── 📄 index.ts
-│   │
-│   ├── 📂 layout/                   # Layout components
-│   │   ├── 📄 Navbar.tsx
-│   │   ├── 📄 Footer.tsx
-│   │   └── 📄 index.ts
-│   │
-│   ├── 📂 providers/                # Context providers
-│   │   ├── 📄 AuthProvider.tsx
-│   │   ├── 📄 AOSProvider.tsx
-│   │   └── 📄 index.ts
-│   │
-│   └── 📂 ui/                       # shadcn/ui components
-│       ├── 📄 button.tsx
-│       ├── 📄 card.tsx
-│       ├── 📄 dialog.tsx
-│       ├── 📄 form.tsx
-│       ├── 📄 input.tsx
-│       ├── 📄 label.tsx
-│       └── 📄 sheet.tsx
+├── 📂 components/                   # React UI Components
 │
-├── 📂 lib/                          # Utilities & helpers
-│   ├── 📄 utils.ts                  # General utilities (cn, etc.)
-│   ├── 📄 localStorageHelper.ts     # localStorage CRUD
-│   ├── 📄 adminCoursesStorage.ts    # Admin course management
-│   │
-│   ├── 📂 data/                     # Static/dummy data
-│   │   ├── 📄 courses.data.ts       # Sample courses
-│   │   └── 📄 index.ts
-│   │
-│   ├── 📂 hooks/                    # Custom React hooks
-│   │   ├── 📄 useInView.ts          # Intersection observer hook
-│   │   └── 📄 index.ts
-│   │
-│   └── 📂 services/                 # 🔮 API services (future)
+├── 📂 lib/                          # System Configuration & Services
+│   ├── 📄 supabase.ts               # Klien Supabase Server Side
+│   ├── 📄 supabaseBrowser.ts        # Klien Supabase Client Side
+│   ├── 📄 serverAuth.ts             # Server-side auth verifier
+│   └── 📂 services/                 # Frontend fetcher API (Wrapper pemanggil /api)
 │
-├── 📂 types/                        # TypeScript definitions
-│   ├── 📄 course.ts                 # Course, Module, Quiz types
-│   └── 📄 user.ts                   # User types
-│
-├── 📂 public/                       # Static assets
-│   └── 📂 images/                   # Course images, etc.
-│
-├── 📂 styles/                       # Additional CSS
-│   └── 📄 custom.css
-│
-├── 📄 components.json               # shadcn/ui config
-├── 📄 next.config.ts                # Next.js config
-├── 📄 tsconfig.json                 # TypeScript config
-├── 📄 package.json
-└── 📄 PROMPTING_GUIDELINE.md        # AI prompting guide
+├── 📂 docs/                         # Info teknis sistem, flowchart & guideline API
+├── 📂 supabase/                     # Schema Database SQL
+└── 📂 types/                        # TypeScript Interface definitions (Domain Model)
 ```
 
 ---
 
-## 🔐 Role & Access Control
+## 🗄 Database Schema
 
-| Page | Guest | User | Admin |
-|------|-------|------|-------|
-| Homepage | ✅ | ✅ | ✅ |
-| Katalog | ✅ | ✅ | ✅ |
-| Course Detail | ✅ | ✅ | ✅ |
-| Login/Register | ✅ | ❌ | ❌ |
-| User Dashboard | ❌ | ✅ | ✅ |
-| Learning Page | ❌ | ✅* | ✅* |
-| Admin Dashboard | ❌ | ❌ | ✅ |
-| Course Management | ❌ | ❌ | ✅ |
-| User Management | ❌ | ❌ | ✅ |
+Database menggunakan PostgreSQL (via Supabase). Tabel utama yang menangani operasional platform:
 
-*Requires course access (purchase/subscription/granted)
+1. **`users`**: Data pendaftar LMS. Tersinkronisasi dengan Supabase Auth.
+2. **`courses`**: Main master table berisi data kursus, *curriculum*, dll.
+3. **`modules` & `module_contents`**: Daftar bab modul, serta isinya (teks/video/quiz).
+4. **`quiz_questions`**: Tabel penyimpanan untuk soal pilihan ganda dari modul *Type=Quiz*.
+5. **`user_courses`**: Pendaftaran / Kepemilikan kursus *(Enrollment)* beserta batas waktu *(Subscription)*.
+6. **`user_progress`**: Rekam jejak *module content* spesifik yang selesai dibaca/diteskan pengguna.
+7. **`certificates`**: Bukti historis sertifikat yang digenerate oleh sistem pasca course berstatus 100% *completed*.
+
+> Skema lengkap dapat dilihat di `docs/SUPABASE_SCHEMA.md` atau `supabase/schema.sql`.
 
 ---
 
-## 💾 Data Storage
+## 📋 Masa Depan / Roadmap
 
-### Current (Demo Stage)
-Data disimpan di browser localStorage dengan keys:
-
-| Key | Description |
-|-----|-------------|
-| `lms_user` | Current logged-in user |
-| `lms_registered_users` | All registered users |
-| `lms_purchases` | Lifetime course purchases |
-| `lms_course_subscriptions` | Active subscriptions |
-| `lms_certificates` | User certificates |
-| `lms_admin_courses` | Admin-created courses |
-| `lms_course_progress_{email}` | User learning progress |
-
-### Planned (Supabase)
-Akan migrasi ke Supabase dengan struktur:
-
-```sql
--- Tables
-users, courses, modules, module_contents,
-quiz_questions, user_courses, user_progress, certificates
-```
-
----
-
-## 🎨 Design System
-
-### Typography
-- **Headings**: Montserrat (600-900 weight)
-- **Body**: Poppins (300-700 weight)
-
-### Colors
-- **Primary**: Red (#dc2626)
-- **Background**: White/Neutral-50
-- **Text**: Neutral-900
-
-### Breakpoints
-- **Mobile**: < 640px
-- **Tablet**: 640px - 1024px
-- **Desktop**: > 1024px
-
----
-
-## 📋 Roadmap
-
-### ✅ Phase 1: Demo Stage (Current)
-- [x] Authentication system
-- [x] Course catalog & detail
-- [x] Learning experience dengan quiz
-- [x] Certificate generation
-- [x] Admin dashboard
-- [x] User management
-
-### 🔄 Phase 2: Supabase Integration
-- [ ] Setup Supabase project
-- [ ] Migrate auth to Supabase Auth
-- [ ] Create database tables
-- [ ] Implement API services layer
-- [ ] Real-time progress sync
-
-### 🔮 Phase 3: Enhanced Features
-- [ ] Payment integration
-- [ ] Video upload & streaming
-- [ ] Discussion forum
-- [ ] Email notifications
-- [ ] Analytics dashboard
-- [ ] Mobile app (React Native)
+- [ ] **Payment Gateway Integration** (Midtrans/Xendit) untuk pembelian real-time.
+- [ ] **Advanced Video Handling**: Streaming via CDN private / HLS Support.
+- [ ] **Discussion Board / Q&A**: Interaksi siswa dengan instruktur dalam platform materi.
+- [ ] **Push Notification / Real-time alerts**: Notifikasi via Supabase Real-time websockets.
 
 ---
 
@@ -323,20 +204,9 @@ quiz_questions, user_courses, user_progress, certificates
 ---
 
 ## 📄 License
-
-Project ini dibuat untuk keperluan internal AWS Inovasi.
-
----
-
-## 📞 Contact
-
-**AWS Inovasi Team**
-- GitHub: [@WildanAbdelF](https://github.com/WildanAbdelF)
+Project ini dilindungi dan di-maintain secara spesifik untuk internal/proyek AWS Inovasi.
 
 ---
-
 <div align="center">
-
-**Built with ❤️ using Next.js, TypeScript, and TailwindCSS**
-
+**Built with ❤️ using Next.js, API First Strategy, and Supabase Database**
 </div>
