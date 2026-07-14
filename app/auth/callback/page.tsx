@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("Memproses login Google...");
@@ -63,5 +63,22 @@ export default function AuthCallbackPage() {
         <p className="text-xs text-neutral-400">Anda akan diarahkan otomatis.</p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[80vh] flex items-center justify-center">
+          <div className="text-center space-y-2 px-6">
+            <p className="text-sm text-neutral-500">Memproses login Google...</p>
+            <p className="text-xs text-neutral-400">Anda akan diarahkan otomatis.</p>
+          </div>
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
