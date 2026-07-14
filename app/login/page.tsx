@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import {
   Form,
@@ -16,11 +16,14 @@ import { Button } from "@/components/ui/button";
 import { StoredUser } from "@/lib/localStorageHelper";
 import { useAuth } from "@/components/providers";
 import { loginWithApi } from "@/lib/services/authApi";
+import { getSupabaseBrowserClient } from "@/lib/supabaseBrowser";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -76,7 +79,22 @@ export default function LoginPage() {
     },
   });
 
-  async function onSubmit(values: any) {
+  type LoginFormValues = {
+    email: string;
+    password: string;
+  };
+
+  const nextPath = searchParams.get("next") || "";
+
+  function resolvePostLoginPath(role: StoredUser["role"]) {
+    if (nextPath.startsWith("/")) {
+      return nextPath;
+    }
+
+    return role === "admin" ? "/admin" : "/dashboard";
+  }
+
+  async function onSubmit(values: LoginFormValues) {
     try {
       const apiUser = await loginWithApi(values.email, values.password);
 
@@ -91,14 +109,39 @@ export default function LoginPage() {
       login(user);
 
       window.alert("Login sukses");
-      if (user.role === "admin") {
-        router.push("/admin");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push(resolvePostLoginPath(user.role));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Email atau password salah.";
+      window.alert(message);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    try {
+      setIsGoogleLoading(true);
+
+      const supabase = getSupabaseBrowserClient();
+      const redirectTo = new URL("/auth/callback", window.location.origin);
+
+      if (nextPath.startsWith("/")) {
+        redirectTo.searchParams.set("next", nextPath);
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectTo.toString(),
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Gagal memulai login Google.";
+      setIsGoogleLoading(false);
       window.alert(message);
     }
   }
@@ -188,7 +231,15 @@ export default function LoginPage() {
               <div className="h-px bg-muted-foreground flex-1" />
             </div>
 
-            <Button variant="outline" className="w-full hover:scale-105 transition-transform border-red-500 text-red-600 hover:bg-red-500 hover:text-white">Login dengan Google</Button>
+            <Button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading}
+              variant="outline"
+              className="w-full hover:scale-105 transition-transform border-red-500 text-red-600 hover:bg-red-500 hover:text-white disabled:opacity-70 disabled:hover:scale-100"
+            >
+              {isGoogleLoading ? "Mengarahkan ke Google..." : "Login dengan Google"}
+            </Button>
 
             <p className="text-center text-sm text-muted-foreground">
               Belum punya akun? <a className="text-red-600" href="/register">Daftar di sini</a>
